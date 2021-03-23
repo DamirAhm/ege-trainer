@@ -1,16 +1,12 @@
 //@ts-check
-const pup = require('puppeteer');
 const cheerio = require('cheerio');
 const { URL } = require('url');
 const { answerTypes } = require('./constants');
-const path = require('path');
 const fetch = require('node-fetch');
 
-// const SITE_ORIGIN = 'https://math-ege.sdamgia.ru/';
+const SITE_ORIGIN = 'https://sdamgia.ru/';
 
-const MATH_THEME_6_URL = 'https://math-ege.sdamgia.ru/test?theme=6';
-const MATH_THEME_7_URL = 'https://math-ege.sdamgia.ru/test?theme=7';
-const MATH_THEME_8_URL = 'https://math-ege.sdamgia.ru/test?theme=8';
+//≡
 
 const PROBLEM_SELECTOR = '.problem_container';
 
@@ -160,19 +156,55 @@ function getUrlSetFromTopic(topic) {
 	return topic.subtopics.map(({ url }) => url);
 }
 
-(async () => {
-	const browser = await pup.launch({
-		// args: ['--no-sandbox', '--disable-setuid-sandbox'],
-		executablePath: path.resolve(
-			__dirname,
-			'./node_modules/puppeteer/.local-chromium/chrome-win/chrome.exe',
-		),
-	});
+async function getSubjects(browser) {
+	try {
+		const page = await browser.newPage();
 
-	browser.close();
-})();
+		await page.goto(SITE_ORIGIN, { waitUntil: 'domcontentloaded' });
+
+		const $ = cheerio.load(await page.content());
+
+		const subjectsElements = $('.sdamgia_menu ul > li');
+
+		const subjects = [];
+		subjectsElements.each((_, el) => {
+			const childAnchor = $(el).children('a');
+			const title = childAnchor.text();
+			console.log(title);
+			if (childAnchor.attr('href') === undefined) {
+				const subsubjectsElements = $(el).find('ul > li > a');
+				const subsubjects = [];
+				subsubjectsElements.each((_, el) => {
+					if ($(el).attr('href').search('ege') !== -1) {
+						subsubjects.push({
+							title: $(el).text(),
+							url: $(el).attr('href'),
+						});
+					}
+				});
+
+				subjects.push({
+					title,
+					subsubjects,
+				});
+			} else if (childAnchor.attr('href').search('ege') !== -1) {
+				subjects.push({
+					title,
+					url: childAnchor.attr('href'),
+				});
+			}
+		});
+
+		return subjects;
+	} catch (e) {
+		console.log(e);
+		return [];
+	}
+}
 
 module.exports = {
 	loadTasksFromPage,
 	getTopics,
+	getUrlSetFromTopic,
+	getSubjects,
 };
