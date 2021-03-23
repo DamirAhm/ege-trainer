@@ -1,0 +1,27 @@
+{
+  "name": "puppeteer_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server",
+    "build": "docker build -t puppeteer .",
+    "docker": "docker run --name puppeteer puppeteer node -e \"`cat index.js`\"",
+    "babel": "babel -o index.js server.js",
+    "watch": "babel -o index.js -w server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@rollup/plugin-json": "^4.1.0",
+    "babel-cli": "^6.26.0",
+    "cheerio": "^1.0.0-rc.5",
+    "chromium": "^3.0.2",
+    "fastify": "^3.14.0",
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^8.0.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0"
+  }
+}
