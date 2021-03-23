@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node server",
+    "dev": "supervisor server",
     "build": "docker build -t puppeteer .",
     "docker": "docker run --name puppeteer puppeteer node -e \"`cat index.js`\"",
     "babel": "babel -o index.js server.js",

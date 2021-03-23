@@ -1,16 +1,18 @@
 //@ts-check
-const cheerio = require('cheerio');
-const { URL } = require('url');
-const { answerTypes } = require('./constants');
-const fetch = require('node-fetch');
+import cheerio from 'cheerio';
+import { URL } from 'url';
+import fetch from 'node-fetch';
 
-const SITE_ORIGIN = 'https://sdamgia.ru/';
+import { getPrefixFromUrl } from './utils.js';
+import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
 //≡
 
 const PROBLEM_SELECTOR = '.problem_container';
 
-async function loadTasksFromPage({ urlSet, amount = 5, offset = 0 }, browser) {
+const problemCache = new Map();
+
+export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, browser) {
 	try {
 		let timesLoaded = 0;
 
@@ -22,7 +24,9 @@ async function loadTasksFromPage({ urlSet, amount = 5, offset = 0 }, browser) {
 		let $ = cheerio.load(await page.content());
 		let lastLoadedElem = getLastProblemId($);
 
-		while ((timesLoaded + 1) * 5 < amount + offset) {
+		let foundUsedProblems = 0;
+
+		while ((timesLoaded + 1) * 5 - foundUsedProblems < amount) {
 			await page.evaluate(() => {
 				const lastProblem = document.querySelector('.problem_container:last-child');
 				if (lastProblem) {
@@ -50,17 +54,21 @@ async function loadTasksFromPage({ urlSet, amount = 5, offset = 0 }, browser) {
 			if (actualLastLoadedElem === lastLoadedElem || actualLastLoadedElem === undefined)
 				break;
 
+			$(PROBLEM_SELECTOR).each((_, el) => {
+				if (used.includes(el.attribs.id)) foundUsedProblems++;
+			});
+
 			lastLoadedElem = actualLastLoadedElem;
 			timesLoaded++;
 		}
 
 		const tasks = getTasksOnPage($, initialPageUrl);
 
-		if (tasks.length < amount + offset && urlSet.length > 1) {
+		if (tasks.length < amount && urlSet.length > 1) {
 			const nextUrlTasks = await loadTasksFromPage(
 				{
-					pageUrlsPool: urlSet.filter((url) => url !== initialPageUrl),
-					amount: amount - (tasks.length - offset),
+					urlSet: urlSet.filter((url) => url !== initialPageUrl),
+					amount: amount - tasks.length,
 				},
 				browser,
 			);
@@ -68,16 +76,16 @@ async function loadTasksFromPage({ urlSet, amount = 5, offset = 0 }, browser) {
 			tasks.push(...nextUrlTasks);
 		}
 
-		return tasks.slice(offset, offset + amount).sort(() => Math.random() - 0.5);
+		return tasks.slice(0, amount).sort(() => Math.random() - 0.5);
 	} catch (e) {
 		console.error(e);
 		return [];
 	}
 }
-function getLastProblemId($) {
+export function getLastProblemId($) {
 	return $(`${PROBLEM_SELECTOR}:last-child`).attr('id');
 }
-function getTasksOnPage($, pageUrl) {
+export function getTasksOnPage($, pageUrl) {
 	const taskElements = $('.problem_container');
 	const parsedTaskElements = [
 		...taskElements.map((_, taskElement) => getTaskInfoFromElement($(taskElement), pageUrl)),
@@ -85,7 +93,10 @@ function getTasksOnPage($, pageUrl) {
 
 	return parsedTaskElements;
 }
-function getTaskInfoFromElement(taskElement, pageUrl) {
+export function getTaskInfoFromElement(taskElement, pageUrl) {
+	const id = taskElement.attr('id');
+	if (problemCache.has(id)) return problemCache.get(id);
+
 	const SITE_ORIGIN = new URL(pageUrl).origin;
 
 	const task = taskElement.find('.pbody').text();
@@ -96,14 +107,15 @@ function getTaskInfoFromElement(taskElement, pageUrl) {
 	const solutionText = taskElement.find('.solution').text();
 
 	let answer = taskElement.find('.answer').text();
-	let answerType = answerTypes.text;
+	let answerType = ANSWER_TYPES.text;
 	if (!answer || answer == '') {
 		answer = taskElement
 			.find('#problem_560187 .solution p:last-of-type:not(.left_margin)')
 			.content();
-		answerType = answerTypes.html;
+		answerType = ANSWER_TYPES.html;
 	}
-	if (answer.startsWith('Ответ:')) answer.replace(/Ответ:\s?/, '');
+
+	if (answer.startsWith('Ответ:')) answer = answer.replace(/Ответ:\s?/i, '');
 	if (answer.endsWith('.')) answer = answer.slice(0, -1);
 
 	const solutionImages = [
@@ -111,9 +123,8 @@ function getTaskInfoFromElement(taskElement, pageUrl) {
 			.find('.solution img')
 			.map((_, el) => new URL(el.attribs.src, SITE_ORIGIN).href),
 	];
-	const id = taskElement.attr('id');
 
-	return {
+	const problem = {
 		task,
 		images,
 		text,
@@ -125,16 +136,19 @@ function getTaskInfoFromElement(taskElement, pageUrl) {
 		answerType,
 		id,
 	};
+
+	problemCache.set(id, problem);
+	return problem;
 }
 
-async function getTopics(origin) {
+export async function getTopics(origin) {
 	const res = await fetch(new URL('/newapi/general', origin).href);
 	const json = await res.json();
 	const topics = json.constructor;
 
 	return parseTopics(topics, origin);
 }
-function parseTopics(topics, origin) {
+export function parseTopics(topics, origin) {
 	return topics
 		.filter(({ issue }) => !isNaN(issue))
 		.map(({ issue, title, subtopics }) => ({
@@ -143,7 +157,7 @@ function parseTopics(topics, origin) {
 			subtopics: parseSubtopics(subtopics, origin),
 		}));
 }
-function parseSubtopics(subtopics, origin) {
+export function parseSubtopics(subtopics, origin) {
 	return subtopics.map(({ id, title, amount }) => ({
 		id,
 		title,
@@ -152,11 +166,7 @@ function parseSubtopics(subtopics, origin) {
 	}));
 }
 
-function getUrlSetFromTopic(topic) {
-	return topic.subtopics.map(({ url }) => url);
-}
-
-async function getSubjects(browser) {
+export async function getSubjects(browser) {
 	try {
 		const page = await browser.newPage();
 
@@ -170,7 +180,7 @@ async function getSubjects(browser) {
 		subjectsElements.each((_, el) => {
 			const childAnchor = $(el).children('a');
 			const title = childAnchor.text();
-			console.log(title);
+
 			if (childAnchor.attr('href') === undefined) {
 				const subsubjectsElements = $(el).find('ul > li > a');
 				const subsubjects = [];
@@ -178,7 +188,7 @@ async function getSubjects(browser) {
 					if ($(el).attr('href').search('ege') !== -1) {
 						subsubjects.push({
 							title: $(el).text(),
-							url: $(el).attr('href'),
+							url: getPrefixFromUrl($(el).attr('href')),
 						});
 					}
 				});
@@ -190,7 +200,7 @@ async function getSubjects(browser) {
 			} else if (childAnchor.attr('href').search('ege') !== -1) {
 				subjects.push({
 					title,
-					url: childAnchor.attr('href'),
+					url: getPrefixFromUrl(childAnchor.attr('href')),
 				});
 			}
 		});
@@ -201,10 +211,3 @@ async function getSubjects(browser) {
 		return [];
 	}
 }
-
-module.exports = {
-	loadTasksFromPage,
-	getTopics,
-	getUrlSetFromTopic,
-	getSubjects,
-};
