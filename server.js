@@ -1,20 +1,22 @@
 import path from 'path';
-import { URL } from 'url';
 import fastify from 'fastify';
 import pup from 'puppeteer';
+import cors from 'cors';
+import fastifyExpress from 'fastify-express';
 
 import { getSubjects, getTopics, loadTasksFromPage } from './parse.js';
 import { getUrlSetFromTopic, getUrlFromPrefix } from './utils.js';
 import { responseTypes } from './constants.js';
-import { SITE_HOST } from './constants.js';
-
-const app = fastify();
 
 const __dirname = process.cwd();
 
 const topicsCache = new Map();
 
 (async () => {
+	const app = fastify();
+	await app.register(fastifyExpress);
+	app.use(cors());
+
 	const browser = await pup.launch({
 		executablePath: path.resolve(
 			__dirname,
@@ -22,11 +24,11 @@ const topicsCache = new Map();
 		),
 	});
 
-	app.get('/subjects', async (req, res) => {
+	app.get('/api/subjects', async (req, res) => {
 		res.type(responseTypes.json);
 		return await getSubjects(browser);
 	});
-	app.get('/topics/:subjectPrefix', async (req, res) => {
+	app.get('/api/topics/:subjectPrefix', async (req, res) => {
 		try {
 			const { subjectPrefix } = req.params;
 
@@ -46,11 +48,11 @@ const topicsCache = new Map();
 			throw new Error();
 		}
 	});
-	app.get('/tasks/:subjectPrefix/:issue', async (req, res) => {
+	app.get('/api/tasks/:subjectPrefix/:issue', async (req, res) => {
 		try {
 			const { subjectPrefix, issue } = req.params;
 			const { amount = 5, usedProblemsString = '[]' } = req.query;
-			const used = JSON.parse(usedProblemsString);
+			const used = usedProblemsString.split(',');
 
 			let topics;
 			if (topicsCache.has(subjectPrefix)) topics = topicsCache.get(subjectPrefix);

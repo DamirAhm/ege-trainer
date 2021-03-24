@@ -151,10 +151,11 @@ export async function getTopics(origin) {
 export function parseTopics(topics, origin) {
 	return topics
 		.filter(({ issue }) => !isNaN(issue))
-		.map(({ issue, title, subtopics }) => ({
+		.map(({ issue, title, subtopics, id }) => ({
 			issue,
 			title,
-			subtopics: parseSubtopics(subtopics, origin),
+			id,
+			subtopics: subtopics && parseSubtopics(subtopics, origin),
 		}));
 }
 export function parseSubtopics(subtopics, origin) {
@@ -174,12 +175,12 @@ export async function getSubjects(browser) {
 
 		const $ = cheerio.load(await page.content());
 
-		const subjectsElements = $('.sdamgia_menu ul > li');
+		const subjectsElements = $('.sdamgia_menu > ul > li');
 
 		const subjects = [];
 		subjectsElements.each((_, el) => {
 			const childAnchor = $(el).children('a');
-			const title = childAnchor.text();
+			const title = childAnchor.text().replace('≡', '').trim();
 
 			if (childAnchor.attr('href') === undefined) {
 				const subsubjectsElements = $(el).find('ul > li > a');
@@ -188,19 +189,21 @@ export async function getSubjects(browser) {
 					if ($(el).attr('href').search('ege') !== -1) {
 						subsubjects.push({
 							title: $(el).text(),
-							url: getPrefixFromUrl($(el).attr('href')),
+							prefix: getPrefixFromUrl($(el).attr('href')),
 						});
 					}
 				});
 
-				subjects.push({
-					title,
-					subsubjects,
-				});
+				if (subsubjects.length > 0) {
+					subjects.push({
+						title,
+						subsubjects,
+					});
+				}
 			} else if (childAnchor.attr('href').search('ege') !== -1) {
 				subjects.push({
 					title,
-					url: getPrefixFromUrl(childAnchor.attr('href')),
+					prefix: getPrefixFromUrl(childAnchor.attr('href')),
 				});
 			}
 		});
