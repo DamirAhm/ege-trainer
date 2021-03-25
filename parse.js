@@ -3,7 +3,14 @@ import cheerio from 'cheerio';
 import { URL } from 'url';
 import fetch from 'node-fetch';
 
-import { getPrefixFromUrl } from './utils.js';
+import {
+	getCheckableAnswer,
+	getImageUrl,
+	getPrefixFromUrl,
+	getTopicUrl,
+	isCheckableAnswer,
+	replaceUrls,
+} from './utils.js';
 import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
 //≡
@@ -19,6 +26,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 		const initialPageUrl = urlSet[Math.floor(Math.random() * urlSet.length)];
 
 		const page = await browser.newPage();
+
 		await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded' });
 
 		let $ = cheerio.load(await page.content());
@@ -88,51 +96,52 @@ export function getLastProblemId($) {
 export function getTasksOnPage($, pageUrl) {
 	const taskElements = $('.problem_container');
 	const parsedTaskElements = [
-		...taskElements.map((_, taskElement) => getTaskInfoFromElement($(taskElement), pageUrl)),
+		...taskElements.map((_, taskElement) => getTaskInfoFromElement($(taskElement))),
 	];
 
 	return parsedTaskElements;
 }
-export function getTaskInfoFromElement(taskElement, pageUrl) {
+export function getTaskInfoFromElement(taskElement) {
 	const id = taskElement.attr('id');
 	if (problemCache.has(id)) return problemCache.get(id);
 
-	const SITE_ORIGIN = new URL(pageUrl).origin;
+	const task = taskElement.find('.pbody').html();
 
-	const task = taskElement.find('.pbody').text();
-	const images = [
-		...taskElement.find('.pbody img').map((_, el) => new URL(el.attribs.src, SITE_ORIGIN).href),
-	];
 	const text = taskElement.find('.probtext').text();
-	const solutionText = taskElement.find('.solution').text();
 
-	let answer = taskElement.find('.answer').text();
+	const haveExpand = !!taskElement.find('.expand');
+
+	let solution = taskElement
+		.find((haveExpand ? '.expand ~ ' : '') + '.solution p:not(:last-child)')
+		.html();
+	solution = replaceUrls(solution);
+
+	let answer = taskElement.find((haveExpand ? '.expand ~ ' : '') + '.answer').text();
+
 	let answerType = ANSWER_TYPES.text;
 	if (!answer || answer == '') {
-		answer = taskElement
-			.find('#problem_560187 .solution p:last-of-type:not(.left_margin)')
-			.content();
-		answerType = ANSWER_TYPES.html;
+		const ps = taskElement.find((haveExpand ? '.expand ~ ' : '') + '.solution > p:last-child');
+		if (isCheckableAnswer(taskElement.find(ps).text())) {
+			answer = getCheckableAnswer(taskElement.find(ps).text());
+		} else {
+			answer = taskElement
+				.find(
+					(haveExpand ? '.expand ~ ' : '') +
+						'.solution p:not(:last-of-type), .solution center > p',
+				)
+				.html();
+			answerType = ANSWER_TYPES.html;
+		}
 	}
 
-	if (answer.startsWith('Ответ:')) answer = answer.replace(/Ответ:\s?/i, '');
-	if (answer.endsWith('.')) answer = answer.slice(0, -1);
-
-	const solutionImages = [
-		...taskElement
-			.find('.solution img')
-			.map((_, el) => new URL(el.attribs.src, SITE_ORIGIN).href),
-	];
+	if (answerType == ANSWER_TYPES.text && isCheckableAnswer(answer))
+		answer = getCheckableAnswer(answer);
 
 	const problem = {
 		task,
-		images,
 		text,
-		solution: {
-			text: solutionText,
-			images: solutionImages,
-		},
-		answer,
+		solution,
+		answer: answer,
 		answerType,
 		id,
 	};
@@ -154,7 +163,7 @@ export function parseTopics(topics, origin) {
 		.map(({ issue, title, subtopics, id }) => ({
 			issue,
 			title,
-			id,
+			url: id && getTopicUrl(id, origin),
 			subtopics: subtopics && parseSubtopics(subtopics, origin),
 		}));
 }
@@ -163,7 +172,7 @@ export function parseSubtopics(subtopics, origin) {
 		id,
 		title,
 		amount,
-		url: new URL(`/test?theme=${id}`, origin).href,
+		url: getTopicUrl(id, origin),
 	}));
 }
 

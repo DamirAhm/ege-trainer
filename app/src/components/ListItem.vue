@@ -40,7 +40,7 @@
 		padding: 5px;
 	}
 	.item-title:not(.nested):hover a {
-		color: rgb(94, 179, 94);
+		color: var(--green);
 	}
 
 	.item-nested {
@@ -63,7 +63,7 @@
 		border-radius: 5px;
 	}
 	.item-nested > *:hover {
-		background-color: rgb(134, 207, 134);
+		background-color: var(--green);
 	}
 	.item:hover .item-nested {
 		display: flex;

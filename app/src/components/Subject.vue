@@ -46,7 +46,7 @@
 		padding: 5px;
 	}
 	.subject-title:not(.nested):hover {
-		color: rgb(94, 179, 94);
+		color: var(--green);
 	}
 
 	.subject-subsubjects {
@@ -69,7 +69,7 @@
 		border-radius: 5px;
 	}
 	.subject-subsubjects > *:hover {
-		background-color: rgb(134, 207, 134);
+		background-color: var(--green);
 	}
 	.subject:hover .subject-subsubjects {
 		display: flex;

@@ -1,12 +1,21 @@
 <template>
-	<div>
-		404 Code Page not found
-		<router-link to="/">Back</router-link>
-	</div>
+	<pre>
+<!-- -->404 Code 
+
+<!-- -->Page not found 
+
+<!-- --><router-link to="/">Back</router-link>
+	</pre>
 </template>
 
 <style scoped>
-	div {
-		color: rgb(219, 87, 87);
+	* {
+		font-size: 1.4rem;
+	}
+	pre {
+		color: var(--red);
+	}
+	a:hover {
+		color: var(--red);
 	}
 </style>

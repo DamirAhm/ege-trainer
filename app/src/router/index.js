@@ -21,6 +21,11 @@ const routes = [
 		component: TasksPage,
 	},
 	{
+		path: '/404',
+		name: 'Page404',
+		component: Page404,
+	},
+	{
 		path: '/:catchAll(.*)',
 		name: '404',
 		component: Page404,

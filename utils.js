@@ -1,5 +1,5 @@
 //@ts-check
-import { SITE_HOST } from './constants.js';
+import { IMAGE_ORIGIN, SITE_HOST } from './constants.js';
 
 export const prefixRegExp = /(https?:\/\/)?(.*)\.sdamgia.ru/;
 
@@ -15,4 +15,40 @@ export function getUrlSetFromTopic(topic) {
 
 export function getUrlFromPrefix(prefix) {
 	return `https://${prefix}.${SITE_HOST}`;
+}
+
+export function getTopicUrl(id, origin) {
+	return new URL(`/test?theme=${id}`, origin).href;
+}
+
+export function getImageUrl(imageSrc, SITE_ORIGIN) {
+	return new URL(imageSrc, SITE_ORIGIN).href;
+}
+
+const srcRegExp = /src=["'`]([a-z0-9_\-?=/\\]+)["'`]/gi;
+export function replaceUrls(html) {
+	return html.replace(srcRegExp, (withSrc, url) => {
+		if (url.startsWith('/')) {
+			return `src="${new URL(url, IMAGE_ORIGIN).href}"`;
+		}
+
+		return withSrc;
+	});
+}
+
+const answerRegExp = /Ответ: ([0-9а-я()|]+)/;
+export function isCheckableAnswer(answer) {
+	if (answer.match(answerRegExp)) {
+		const [_, value] = answer.match(answerRegExp);
+
+		//! Осторожно костыли
+		if (value.search(/[()|]/) === -1) {
+			return true;
+		}
+	}
+
+	return false;
+}
+export function getCheckableAnswer(answer) {
+	return answer.match(answerRegExp)[1];
 }

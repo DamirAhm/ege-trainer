@@ -8,6 +8,8 @@
 	:root {
 		font-family: Roboto, sans-serif;
 		font-size: 1rem;
+		--green: rgb(94, 179, 94);
+		--red: rgb(219, 87, 87);
 	}
 	* {
 		margin: 0;

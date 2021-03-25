@@ -5,5 +5,5 @@ export const answerTypes = {
 
 export const taskStates = {
 	solved: 'solved',
-	notSolved: 'not',
+	failed: 'failed',
 };
