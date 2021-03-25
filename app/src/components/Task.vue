@@ -15,7 +15,10 @@
 			<div class="problem-solution" v-html="this.solution"></div>
 
 			<div class="problem-footer">
-				<div class="problem-answer" v-html="this.answer"></div>
+				<div class="problem-answer">
+					<div v-if="this.answerType === 'text'">Ответ: {{ this.answer }}</div>
+					<div v-else v-html="this.answer"></div>
+				</div>
 
 				<div class="problem-buttons">
 					<button
@@ -157,6 +160,7 @@
 		margin: 0 auto;
 		display: flex;
 		justify-content: space-between;
+		flex-wrap: wrap;
 	}
 
 	.problem-answer,

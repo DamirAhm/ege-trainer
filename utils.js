@@ -26,14 +26,17 @@ export function getImageUrl(imageSrc, SITE_ORIGIN) {
 }
 
 const srcRegExp = /src=["'`]([a-z0-9_\-?=/\\]+)["'`]/gi;
-export function replaceUrls(html) {
-	return html.replace(srcRegExp, (withSrc, url) => {
-		if (url.startsWith('/')) {
-			return `src="${new URL(url, IMAGE_ORIGIN).href}"`;
-		}
+const styleRegExp = /style=["'`]([a-z0-9_\-?=/\\:;%\s]+)["'`]/gi;
+export function fixHTML(html) {
+	return html
+		.replace(srcRegExp, (withSrc, url) => {
+			if (url.startsWith('/')) {
+				return `src="${new URL(url, IMAGE_ORIGIN).href}"`;
+			}
 
-		return withSrc;
-	});
+			return withSrc;
+		})
+		.replace(styleRegExp, '');
 }
 
 const answerRegExp = /Ответ: ([0-9а-я()|]+)/;

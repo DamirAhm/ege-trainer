@@ -54,17 +54,32 @@
 		created() {
 			const { subjectPrefix, issue } = this.$route.params;
 
-			this.loading = true;
-			getTasks(subjectPrefix, issue, { amount: 1 })
-				.then((t) => {
-					this.problems = t.map((task) => ({ ...task, visible: true }));
-					this.loading = false;
-				})
-				.catch((e) => this.$router.push({ name: 'Page404' }));
+			if (localStorage.getItem('problems')) {
+				this.problems = JSON.parse(localStorage.getItem('problems'));
+			} else {
+				this.loading = true;
+				getTasks(subjectPrefix, issue, { amount: 1 })
+					.then((t) => {
+						this.problems = t.map((task) => ({ ...task, visible: true }));
+						localStorage.setItem('problems', JSON.stringify(this.problems));
+						this.loading = false;
+					})
+					.catch((e) => this.$router.push({ name: 'Page404' }));
+			}
+		},
+		beforeRouteLeave() {
+			localStorage.removeItem('problems');
 		},
 		methods: {
 			removeProblem(problem) {
 				problem.visible = false;
+
+				if (this.problems.every(({ visible }) => !visible)) {
+					this.$router.push({
+						name: 'Topic',
+						params: { subjectPrefix: this.$route.params.subjectPrefix },
+					});
+				}
 			},
 			async appendProblemsForFail() {
 				if (this.problemsPromises.length > 0) {
@@ -98,6 +113,9 @@
 		watch: {
 			canFetchMore() {
 				if (!this.canFetchMore) alert('Невозможно получить больше задач');
+			},
+			problems() {
+				localStorage.setItem('problems', JSON.stringify(this.problems));
 			},
 		},
 	};

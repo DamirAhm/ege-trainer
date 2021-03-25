@@ -9,7 +9,7 @@ import {
 	getPrefixFromUrl,
 	getTopicUrl,
 	isCheckableAnswer,
-	replaceUrls,
+	fixHTML,
 } from './utils.js';
 import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
@@ -105,37 +105,43 @@ export function getTaskInfoFromElement(taskElement) {
 	const id = taskElement.attr('id');
 	if (problemCache.has(id)) return problemCache.get(id);
 
-	const task = taskElement.find('.pbody').html();
+	let task = taskElement.find('.pbody').html();
+	task = fixHTML(task);
 
 	const text = taskElement.find('.probtext').text();
 
-	const haveExpand = !!taskElement.find('.expand');
+	const haveExpand = taskElement.find('.expand').length > 0;
 
-	let solution = taskElement
-		.find((haveExpand ? '.expand ~ ' : '') + '.solution p:not(:last-child)')
-		.html();
-	solution = replaceUrls(solution);
+	let solution = [
+		...taskElement
+			.find('.solution p:not(:last-of-type), .solution center > p')
+			.map((_, el) => taskElement.find(el).html()),
+	].join(' ');
+	solution = fixHTML(solution);
 
 	let answer = taskElement.find((haveExpand ? '.expand ~ ' : '') + '.answer').text();
-
 	let answerType = ANSWER_TYPES.text;
+
 	if (!answer || answer == '') {
-		const ps = taskElement.find((haveExpand ? '.expand ~ ' : '') + '.solution > p:last-child');
-		if (isCheckableAnswer(taskElement.find(ps).text())) {
-			answer = getCheckableAnswer(taskElement.find(ps).text());
-		} else {
-			answer = taskElement
-				.find(
-					(haveExpand ? '.expand ~ ' : '') +
-						'.solution p:not(:last-of-type), .solution center > p',
-				)
-				.html();
-			answerType = ANSWER_TYPES.html;
+		const ps = taskElement.find(
+			(haveExpand ? '.expand ~ ' : '') + '.solution > p:not(.left_margin)',
+		);
+
+		for (const p of ps) {
+			if (isCheckableAnswer(taskElement.find(p).text())) {
+				answer = getCheckableAnswer(taskElement.find(p).text());
+				break;
+			} else if (taskElement.find(p).text().startsWith('Ответ')) {
+				answer = taskElement.find(p).html();
+				answerType = ANSWER_TYPES.html;
+				break;
+			}
 		}
 	}
 
 	if (answerType == ANSWER_TYPES.text && isCheckableAnswer(answer))
 		answer = getCheckableAnswer(answer);
+	else if (answerType == ANSWER_TYPES.html) answer = fixHTML(answer);
 
 	const problem = {
 		task,
