@@ -1,8 +1,15 @@
 <template>
-	<div class="problem" :id="id" :style="{ borderColor }">
+	<div class="problem" :style="{ borderColor }">
 		<div class="problem-issue">{{ issue }}</div>
 		<div class="problem-task" v-html="this.task"></div>
-		<div class="problem-text">{{ text }}</div>
+
+		<div class="problem-text" v-if="text !== undefined && text.length > 0">
+			<button class="problem-button" v-if="textVisible" @click="textVisible = false">
+				Скрыть текст
+			</button>
+			<button class="problem-button" v-else @click="textVisible = true">Открыть текст</button>
+			<div class="problem-text_value" v-if="textVisible">{{ text }}</div>
+		</div>
 
 		<input
 			type="text"
@@ -38,6 +45,7 @@
 					<button
 						class="problem-button problem-correctAnswer"
 						@click="this.state = 'solved'"
+						v-if="this.state != 'solved'"
 					>
 						Ответ верный
 					</button>
@@ -49,12 +57,17 @@
 			class="problem-removeProgressBar"
 			:style="{
 				width: `${removeProgress}%`,
+				backgroundColor: borderColor,
+				transition: `${this.removeDelay / 100}s`,
 			}"
 		></div>
+
+		<div class="problem-close" @click="$emit('remove'), $emit(state)">x</div>
 	</div>
 </template>
 
 <script>
+	import { mapState } from 'vuex';
 	import { taskStates } from '../constants';
 	//TODO сохранять попользованые задания в локал
 	export default {
@@ -71,6 +84,7 @@
 		data() {
 			return {
 				solutionVisible: false,
+				textVisible: false,
 
 				userInput: '',
 				state: '',
@@ -87,11 +101,14 @@
 				else if (this.state === taskStates.solved) return 'var(--green)';
 				else return 'var(--red)';
 			},
+			...mapState({
+				removeDelay: (state) => state.settings.removeDelay,
+				autoRemove: (state) => state.settings.autoRemove,
+			}),
 		},
 		beforeUnmount() {
 			if (this.progressInterval) clearInterval(this.progressInterval);
 		},
-		//Добавить эмит на решение задания
 		emits: ['remove', 'solved', 'failed', 'initiallyFailed'],
 		methods: {
 			handleCheck() {
@@ -104,9 +121,13 @@
 					this.$emit('initiallyFailed', this.issue);
 				}
 
-				//TODO сделать настраиваемую задержку перед удалением (или убрать удаление)
-				this.removeProgress = 100;
-				this.progressInterval = setInterval(this.reduceProgress, 100);
+				if (this.autoRemove) {
+					this.removeProgress = 100;
+					this.progressInterval = setInterval(
+						this.reduceProgress,
+						(this.removeDelay * 1000) / 100,
+					);
+				}
 			},
 
 			stopRemoving() {
@@ -114,7 +135,10 @@
 				this.progressStoped = true;
 			},
 			continueRemoving() {
-				this.progressInterval = setInterval(this.reduceProgress, 100);
+				this.progressInterval = setInterval(
+					this.reduceProgress,
+					(this.removeDelay * 1000) / 100,
+				);
 				this.progressStoped = false;
 			},
 			reduceProgress() {
@@ -137,10 +161,17 @@
 	.problem {
 		max-width: max(60vw, 300px);
 		border: 2px solid black;
-		border-radius: 5px;
+		border-radius: 7px;
 		padding: 8px;
 		font-size: 1.1rem;
 		margin: 20px 0;
+		position: relative;
+	}
+	.problem-close {
+		color: var(--red);
+		position: absolute;
+		top: 10px;
+		right: 10px;
 	}
 
 	.problem-task,
@@ -188,8 +219,6 @@
 	.problem-removeProgressBar {
 		margin-top: 10px;
 		height: 3px;
-		background-color: var(--red);
-		transition: 0.1s;
 		margin-bottom: 0;
 	}
 </style>

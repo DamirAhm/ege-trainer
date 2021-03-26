@@ -34,6 +34,7 @@
 			this.loading = true;
 			getSubjects().then((s) => {
 				this.subjects = s;
+
 				this.loading = false;
 			});
 		},

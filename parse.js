@@ -84,7 +84,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 			tasks.push(...nextUrlTasks);
 		}
 
-		return tasks.slice(0, amount).sort(() => Math.random() - 0.5);
+		return tasks.sort(() => Math.random() - 0.5).slice(0, amount);
 	} catch (e) {
 		console.error(e);
 		return [];
@@ -114,7 +114,10 @@ export function getTaskInfoFromElement(taskElement) {
 
 	let solution = [
 		...taskElement
-			.find('.solution p:not(:last-of-type), .solution center > p')
+			.find(
+				(haveExpand ? '.expand ~ ' : '') +
+					'.solution p:not(:last-of-type), .solution center > p',
+			)
 			.map((_, el) => taskElement.find(el).html()),
 	].join(' ');
 	solution = fixHTML(solution);

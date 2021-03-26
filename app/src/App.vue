@@ -1,8 +1,20 @@
 <template>
 	<div class="container">
+		<Settings />
 		<router-view />
 	</div>
 </template>
+
+<script>
+	import Settings from './components/Settings';
+
+	export default {
+		name: 'App',
+		components: {
+			Settings,
+		},
+	};
+</script>
 
 <style>
 	:root {

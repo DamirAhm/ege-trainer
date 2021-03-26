@@ -1,6 +1,12 @@
 <template>
 	<div v-if="!loading" class="tasks">
-		<div v-for="problem in problems" :key="problem.id" class="task">
+		<div
+			v-for="problem in problems"
+			:key="problem.id"
+			class="task"
+			:ref="setTaskRef"
+			:data-id="problem.id"
+		>
 			<Task
 				v-if="problem.visible"
 				:task="problem.task"
@@ -23,6 +29,8 @@
 <script>
 	import Task from '@/components/Task';
 	import { getTasks } from '../api';
+	import { clearStorage, getInfoFromStorage, updateStorage } from '../utils';
+	import { mapState } from 'vuex';
 
 	export default {
 		name: 'TasksPage',
@@ -37,49 +45,79 @@
 				problemsPromises: [],
 				canFetchMore: true,
 
+				tasksRefs: [],
+
 				//TODO в vuex
-				amountOfNewProblemsForFail: 2,
 			};
 		},
 		computed: {
 			used() {
 				return this.problems.map(({ id }) => id);
 			},
-			sortedTasks() {
-				return this.tasks.sort(
-					({ issueA }, { issueB }) => parseInt(issueA) - parseInt(issueB),
-				);
+			isAnyProblemVisible() {
+				return this.problems.some(({ visible }) => visible);
 			},
+			...mapState({
+				newProblemsForFail: (state) => state.settings.newProblemsForFail,
+				initialAmountOfProblems: (state) => state.settings.initialAmountOfProblems,
+			}),
 		},
 		created() {
 			const { subjectPrefix, issue } = this.$route.params;
+			const { problems: savedProblems, issue: savedIssue } = getInfoFromStorage();
 
-			if (localStorage.getItem('problems')) {
-				this.problems = JSON.parse(localStorage.getItem('problems'));
-			} else {
-				this.loading = true;
-				getTasks(subjectPrefix, issue, { amount: 1 })
-					.then((t) => {
-						this.problems = t.map((task) => ({ ...task, visible: true }));
-						localStorage.setItem('problems', JSON.stringify(this.problems));
-						this.loading = false;
-					})
-					.catch((e) => this.$router.push({ name: 'Page404' }));
-			}
-		},
-		beforeRouteLeave() {
-			localStorage.removeItem('problems');
-		},
-		methods: {
-			removeProblem(problem) {
-				problem.visible = false;
+			if (savedProblems && savedIssue === issue) {
+				this.problems = savedProblems;
 
-				if (this.problems.every(({ visible }) => !visible)) {
+				if (!this.isAnyProblemVisible) {
 					this.$router.push({
 						name: 'Topic',
 						params: { subjectPrefix: this.$route.params.subjectPrefix },
 					});
 				}
+			} else {
+				clearStorage();
+
+				this.loading = true;
+				getTasks(subjectPrefix, issue, { amount: this.initialAmountOfProblems })
+					.then((t) => {
+						this.problems = t.map((task) => ({ ...task, visible: true }));
+						this.loading = false;
+
+						updateStorage({ problems: this.problems, issue });
+					})
+					.catch((e) => this.$router.push({ name: 'Page404' }));
+			}
+		},
+		beforeRouteLeave() {
+			clearStorage();
+		},
+		methods: {
+			setTaskRef(el) {
+				if (el) {
+					this.tasksRefs.push(el);
+				}
+			},
+			removeProblem(problem) {
+				problem.visible = false;
+
+				updateStorage({ problems: this.problems });
+
+				if (!this.isAnyProblemVisible) {
+					this.$router.push({
+						name: 'Topic',
+						params: { subjectPrefix: this.$route.params.subjectPrefix },
+					});
+				} else {
+					this.scrollToFirstVisibleElement();
+				}
+			},
+			scrollToFirstVisibleElement() {
+				const firstVisible = this.problems.find(({ visible }) => visible);
+
+				const element = this.tasksRefs.find((el) => el.dataset.id === firstVisible.id);
+
+				element.scrollIntoView();
 			},
 			async appendProblemsForFail() {
 				if (this.problemsPromises.length > 0) {
@@ -93,10 +131,10 @@
 			},
 			async loadNewProblems(issue) {
 				if (this.canFetchMore) {
-					const promise = this.getMoreProblems(this.amountOfNewProblemsForFail, issue);
+					const promise = this.getMoreProblems(this.newProblemsForFail, issue);
 
 					promise.then((res) => {
-						if (res.length < this.amountOfNewProblemsForFail) {
+						if (res.length < this.newProblemsForFail) {
 							this.canFetchMore = false;
 						}
 					});
@@ -115,7 +153,7 @@
 				if (!this.canFetchMore) alert('Невозможно получить больше задач');
 			},
 			problems() {
-				localStorage.setItem('problems', JSON.stringify(this.problems));
+				updateStorage({ problems: this.problems });
 			},
 		},
 	};

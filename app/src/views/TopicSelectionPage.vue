@@ -8,8 +8,8 @@
 		>
 			<router-link
 				:to="`/tasks/${$route.params.subjectPrefix}/${getFinalPath(topic)}`"
-				:class="`${topic.selected ? 'selected' : ''}`"
-				@drag.prevent="handleSelect(topic)"
+				:class="`${topic.selected ? 'selected link' : 'link'}`"
+				@mousedown="handleSelect(topic)"
 			>
 				{{ issue }}. {{ title }}
 			</router-link>
@@ -20,6 +20,7 @@
 
 <script>
 	import { getTopics } from '@/api';
+	import { clearStorage } from '../utils';
 	import ListItem from '@/components/ListItem';
 
 	export default {
@@ -47,24 +48,31 @@
 				})
 				.catch((e) => this.$router.push({ name: 'Page404' }));
 		},
+		beforeRouteLeave() {
+			clearStorage();
+		},
 		methods: {
 			handleSelect(topic) {
 				topic.selected = !topic.selected;
 			},
 			getFinalPath({ issue }) {
 				if (!this.isAnySelected) return issue;
-				else
-					return this.topics
+				else {
+					const issues = this.topics
 						.filter(({ selected }) => selected)
-						.map(({ issue }) => issue)
-						.concat(issue)
-						.join('+');
+						.map(({ issue }) => issue);
+
+					return [...new Set([...issues, issue])].sort((a, b) => a - b).join('+');
+				}
 			},
 		},
 	};
 </script>
 
 <style scoped>
+	.link {
+		user-select: none;
+	}
 	.selected:not(.nested) {
 		color: var(--green);
 	}

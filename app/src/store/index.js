@@ -1,8 +1,8 @@
 import { createStore } from 'vuex';
+import SettingsModule from './Settings';
 
 export default createStore({
-	state: {},
-	mutations: {},
-	actions: {},
-	modules: {},
+	modules: {
+		settings: SettingsModule,
+	},
 });
