@@ -11,3 +11,10 @@ export const taskStates = {
 export const mutations = {
 	SET_SETTINGS: 'SET_SETTINGS',
 };
+
+export const timerStates = {
+	none: 'none',
+	started: 'started',
+	stoped: 'stoped',
+	finished: 'finished',
+};

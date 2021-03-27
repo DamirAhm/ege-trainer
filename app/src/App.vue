@@ -1,5 +1,6 @@
 <template>
 	<div class="container">
+		<Timer />
 		<Settings />
 		<router-view />
 	</div>
@@ -7,11 +8,13 @@
 
 <script>
 	import Settings from './components/Settings';
+	import Timer from './components/Timer';
 
 	export default {
 		name: 'App',
 		components: {
 			Settings,
+			Timer,
 		},
 	};
 </script>
