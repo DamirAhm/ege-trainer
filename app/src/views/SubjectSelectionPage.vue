@@ -12,6 +12,9 @@
 			</router-link>
 		</ListItem>
 	</div>
+	<div v-else-if="error != null" class="error">
+		{{ error }}
+	</div>
 	<div v-else>loading...</div>
 </template>
 
@@ -28,17 +31,25 @@
 			return {
 				subjects: [],
 				loading: false,
+				error: null,
 			};
 		},
 		created() {
 			this.loading = true;
-			getSubjects().then((s) => {
-				this.subjects = s;
+			getSubjects()
+				.then((s) => {
+					this.subjects = s;
 
-				this.loading = false;
-			});
+					this.loading = false;
+				})
+				.catch((e) => (this.error = 'Чот ошибка какая то ¯\\_(ツ)_/¯'));
 		},
 	};
 </script>
 
-<style></style>
+<style>
+	.error {
+		color: var(--red);
+		font-size: 1.4rem;
+	}
+</style>

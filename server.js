@@ -4,7 +4,9 @@ import fastify from 'fastify';
 import pup from 'puppeteer';
 import cors from 'cors';
 import fastifyExpress from 'fastify-express';
-import { URLSearchParams } from 'url';
+import sirv from 'sirv';
+import compression from 'compression';
+import fs from 'fs';
 
 import { getSubjects, getTopics, loadTasksFromPage } from './parse.js';
 import { getUrlSetFromTopic, getUrlFromPrefix } from './utils.js';
@@ -19,7 +21,16 @@ const multiIssueRegExp = /([а-яa-z0-9]+)(\+[а-яa-z0-9])*/i;
 (async () => {
 	const app = fastify();
 	await app.register(fastifyExpress);
+
 	app.use(cors());
+	app.use(
+		sirv(path.join(__dirname, 'dist'), {
+			maxAge: 31536000,
+			immutable: true,
+			gzip: true,
+		}),
+	);
+	app.use(compression());
 
 	const browser = await pup.launch({
 		executablePath: path.resolve(
@@ -122,6 +133,10 @@ const multiIssueRegExp = /([а-яa-z0-9]+)(\+[а-яa-z0-9])*/i;
 			res.code(404);
 			throw new Error();
 		}
+	});
+	app.get('/*', (_, res) => {
+		const stream = fs.createReadStream(path.join(__dirname, 'build/index.html'));
+		res.type('text/html').send(stream);
 	});
 
 	app.listen(3000).then(() => console.log('Server listening'));

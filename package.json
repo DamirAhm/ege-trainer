@@ -7,10 +7,9 @@
   "scripts": {
     "start": "node server",
     "dev": "supervisor server",
-    "build": "docker build -t puppeteer .",
-    "docker": "docker run --name puppeteer puppeteer node -e \"`cat index.js`\"",
-    "babel": "babel -o index.js server.js",
-    "watch": "babel -o index.js -w server.js"
+    "build": "npm run build --prefix ./app",
+    "gzip": "gzip -9 -f ./dist/js/* && gzip -9 -f ./dist/css/*",
+    "postbuild": "rm -rf ./dist && cp -r ./app/dist ./ && npm run gzip"
   },
   "keywords": [],
   "author": "",
@@ -20,12 +19,14 @@
     "babel-cli": "^6.26.0",
     "cheerio": "^1.0.0-rc.5",
     "chromium": "^3.0.2",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "fastify": "^3.14.0",
     "fastify-express": "^0.3.2",
     "node-fetch": "^2.6.1",
     "puppeteer": "^8.0.0",
     "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "sirv": "^1.0.11"
   }
 }
