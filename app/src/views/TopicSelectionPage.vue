@@ -1,21 +1,27 @@
 <template>
-	<div v-if="loading === false && topics.length > 0">
-		<ListItem
-			v-for="topic in topics"
-			:key="topic.title"
-			:element="topic"
-			v-slot:default="{ element: { issue }, title }"
-		>
-			<router-link
-				:to="`/tasks/${$route.params.subjectPrefix}/${getFinalPath(topic)}`"
-				:class="`${topic.selected ? 'selected link' : 'link'}`"
-				@mousedown="handleSelect(topic)"
+	<div>
+		<div class="buttons">
+			<button class="selectAll btn" @click="selectAll">Выбрать все</button>
+			<button class="unselectAll btn" @click="unselectAll">Сбросить выделение</button>
+		</div>
+		<div v-if="loading === false && topics.length > 0">
+			<ListItem
+				v-for="topic in topics"
+				:key="topic.title"
+				:element="topic"
+				v-slot:default="{ element: { issue }, title }"
 			>
-				{{ issue }}. {{ title }}
-			</router-link>
-		</ListItem>
+				<router-link
+					:to="`/tasks/${$route.params.subjectPrefix}/${getFinalPath(topic)}`"
+					:class="`${topic.selected ? 'selected link' : 'link'}`"
+					@mousedown="handleSelect(topic)"
+				>
+					{{ issue }}. {{ title }}
+				</router-link>
+			</ListItem>
+		</div>
+		<div v-else>loading...</div>
 	</div>
-	<div v-else>loading...</div>
 </template>
 
 <script>
@@ -65,6 +71,12 @@
 					return [...new Set([...issues, issue])].sort((a, b) => a - b).join('+');
 				}
 			},
+			selectAll() {
+				this.topics.forEach((p) => (p.selected = true));
+			},
+			unselectAll() {
+				this.topics.forEach((p) => (p.selected = false));
+			},
 		},
 	};
 </script>
@@ -78,5 +90,17 @@
 	}
 	.selected.nested {
 		background-color: var(--green);
+	}
+
+	.buttons {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 10px;
+	}
+
+	.selectAll,
+	.unselectAll {
+		font-size: 1.2rem;
 	}
 </style>

@@ -4,10 +4,10 @@
 		<div class="problem-task" v-html="this.task"></div>
 
 		<div class="problem-text" v-if="text !== undefined && text.length > 0">
-			<button class="problem-button" v-if="textVisible" @click="textVisible = false">
+			<button class="btn" v-if="textVisible" @click="textVisible = false">
 				Скрыть текст
 			</button>
-			<button class="problem-button" v-else @click="textVisible = true">Открыть текст</button>
+			<button class="btn" v-else @click="textVisible = true">Открыть текст</button>
 			<div class="problem-text_value" v-if="textVisible">{{ text }}</div>
 		</div>
 
@@ -27,23 +27,19 @@
 					<div v-else v-html="this.answer"></div>
 				</div>
 
-				<div class="problem-buttons">
+				<div class="btns">
 					<button
 						v-if="progressStoped"
-						class="problem-button problem-continueRemoving"
+						class="btn problem-continueRemoving"
 						@click="continueRemoving"
 					>
 						Продолжить удаление
 					</button>
-					<button
-						v-else
-						class="problem-button problem-stopRemoving"
-						@click="stopRemoving"
-					>
+					<button v-else class="btn problem-stopRemoving" @click="stopRemoving">
 						Остановить удаление
 					</button>
 					<button
-						class="problem-button problem-correctAnswer"
+						class="btn problem-correctAnswer"
 						@click="this.state = 'solved'"
 						v-if="this.state != 'solved'"
 					>
@@ -52,7 +48,7 @@
 				</div>
 			</div>
 		</template>
-		<div v-else class="problem-check problem-button" @click="handleCheck">Проверить</div>
+		<div v-else class="problem-check btn" @click="handleCheck">Проверить</div>
 		<div
 			class="problem-removeProgressBar"
 			:style="{
@@ -202,18 +198,6 @@
 
 	.problem-buttons button:nth-child(1) {
 		margin-right: 10px;
-	}
-	.problem-button {
-		background-color: transparent;
-		border: 1px solid black;
-		padding: 4px;
-		outline: none;
-		cursor: pointer;
-		border-radius: 3px;
-		width: fit-content;
-	}
-	.problem-button:hover {
-		box-shadow: black 0px 0px 2px;
 	}
 
 	.problem-removeProgressBar {

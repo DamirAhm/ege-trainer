@@ -39,4 +39,19 @@
 		justify-content: center;
 		align-items: center;
 	}
+
+	.btn {
+		background-color: transparent;
+		border: 1px solid black;
+		padding: 4px;
+		outline: none;
+		cursor: pointer;
+		border-radius: 3px;
+		width: fit-content;
+	}
+	.btn:hover {
+		border-color: var(--green);
+		color: var(--green);
+		box-shadow: black 0px 0px 2px;
+	}
 </style>

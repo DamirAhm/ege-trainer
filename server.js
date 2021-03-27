@@ -16,8 +16,6 @@ const __dirname = process.cwd();
 
 const topicsCache = new Map();
 
-const multiIssueRegExp = /([а-яa-z0-9]+)(\+[а-яa-z0-9])*/i;
-
 (async () => {
 	const app = fastify();
 	await app.register(fastifyExpress);
@@ -139,5 +137,5 @@ const multiIssueRegExp = /([а-яa-z0-9]+)(\+[а-яa-z0-9])*/i;
 		res.type('text/html').send(stream);
 	});
 
-	app.listen(3000).then(() => console.log('Server listening'));
+	app.listen(process.env.PORT ?? 3000).then(() => console.log('Server listening'));
 })();
