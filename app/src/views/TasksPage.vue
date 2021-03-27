@@ -52,7 +52,10 @@
 		},
 		computed: {
 			used() {
-				return this.problems.map(({ id }) => id);
+				const { subjectPrefix } = this.$route.params;
+				const usedInSubject = this.$store.state.used[subjectPrefix] ?? [];
+
+				return this.problems.map(({ id }) => id).concat(usedInSubject);
 			},
 			isAnyProblemVisible() {
 				return this.problems.some(({ visible }) => visible);
@@ -91,6 +94,7 @@
 		},
 		beforeRouteLeave() {
 			clearStorage();
+			saveUsedToStore();
 		},
 		methods: {
 			setTaskRef(el) {
@@ -146,6 +150,17 @@
 				const { subjectPrefix } = this.$route.params;
 
 				return await getTasks(subjectPrefix, issue, { amount, used: this.used });
+			},
+
+			saveUsedToStore() {
+				const { subjectPrefix } = this.$route.params;
+				this.$store.commit('addUsed', {
+					subjectPrefix,
+					used:
+						this.used.filter((id) =>
+							this.problems.find(({ id: probId }) => probId === id),
+						)?.visible === false,
+				});
 			},
 		},
 		watch: {
