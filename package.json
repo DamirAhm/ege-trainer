@@ -7,9 +7,10 @@
   "scripts": {
     "start": "node server",
     "dev": "supervisor server",
-    "build": "npm run build --prefix ./app",
+    ":build": "npm run build --prefix ./app",
+    "build": "echo 'built'",
     "gzip": "gzip -9 -f ./dist/js/* && gzip -9 -f ./dist/css/*",
-    "postbuild": "rm -rf ./dist && cp -r ./app/dist ./ && npm run gzip"
+    "post:build": "rm -rf ./dist && cp -r ./app/dist ./ && npm run gzip"
   },
   "keywords": [],
   "author": "",
