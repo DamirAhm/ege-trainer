@@ -49,7 +49,8 @@
 		border-radius: 3px;
 		width: fit-content;
 	}
-	.btn:hover {
+	.btn:hover,
+	.btn:focus {
 		border-color: var(--green);
 		color: var(--green);
 		box-shadow: black 0px 0px 2px;

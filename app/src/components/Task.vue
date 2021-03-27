@@ -14,6 +14,8 @@
 		<input
 			type="text"
 			v-model="userInput"
+			placeholder="Ответ"
+			class="problem-userInput"
 			:disabled="this.state != ''"
 			@keydown.enter="handleCheck"
 		/>
@@ -48,7 +50,7 @@
 				</div>
 			</div>
 		</template>
-		<div v-else class="problem-check btn" @click="handleCheck">Проверить</div>
+		<button v-else class="problem-check btn" @click="handleCheck">Проверить</button>
 		<div
 			class="problem-removeProgressBar"
 			:style="{
@@ -58,7 +60,7 @@
 			}"
 		></div>
 
-		<div class="problem-close" @click="$emit('remove'), $emit(state)">x</div>
+		<button class="problem-close" @click="$emit('remove'), $emit(state)">x</button>
 	</div>
 </template>
 
@@ -168,6 +170,22 @@
 		position: absolute;
 		top: 10px;
 		right: 10px;
+		cursor: pointer;
+		border: none;
+		background: none;
+		font-size: 1.2rem;
+		outline: none;
+	}
+	.problem-close:hover,
+	.problem-close:focus {
+		transform: scale(1.25);
+	}
+
+	.problem-userInput {
+		padding: 5px;
+		border-radius: 5px;
+		border: 1px solid black;
+		outline-color: var(--green);
 	}
 
 	.problem-task,
@@ -179,6 +197,10 @@
 	.problem > *,
 	.problem-solution_text {
 		margin-bottom: 10px;
+	}
+
+	.problem-check {
+		display: block;
 	}
 
 	.problem-footer {
