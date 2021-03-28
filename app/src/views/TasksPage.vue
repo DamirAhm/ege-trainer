@@ -19,6 +19,7 @@
 				:issue="problem.issue"
 				@remove="removeProblem(problem)"
 				@failed="appendProblemsForFail(problem.id)"
+				@solved="removePromise(problem.id)"
 				@initiallyFailed="canFetchMore && loadNewProblems(problem)"
 			/>
 		</div>
@@ -146,6 +147,9 @@
 				element.scrollIntoView();
 				element.querySelector('input').focus?.();
 			},
+			removePromise(id) {
+				this.problemsPromises[id] = undefined;
+			},
 			async appendProblemsForFail(id) {
 				if (this.problemsPromises[id]) {
 					const newProblems = await this.problemsPromises[id];
@@ -183,10 +187,11 @@
 				const { subjectPrefix } = this.$route.params;
 				this.$store.commit('addUsed', {
 					subjectPrefix,
-					used:
-						this.used.filter((id) =>
-							this.problems.find(({ id: probId }) => probId === id),
-						)?.visible === false,
+					used: this.used.filter(
+						(id) =>
+							this.problems.find(({ id: probId }) => probId === id)?.visible ===
+							false,
+					),
 				});
 			},
 		},

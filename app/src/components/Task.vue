@@ -60,14 +60,16 @@
 			}"
 		></div>
 
-		<button class="problem-close" @click="$emit(state), $emit('remove')">x</button>
+		<button class="problem-close" @click="$emit(state), $emit('remove')">
+			x
+		</button>
 	</div>
 </template>
 
 <script>
 	import { mapState } from 'vuex';
 	import { taskStates } from '../constants';
-	//TODO сохранять попользованые задания в локал
+
 	export default {
 		name: 'Task',
 		props: {
