@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<div class="buttons">
+		<div class="buttons" v-if='!loading'>
 			<button class="selectAll btn" @click="selectAll">Выбрать все</button>
 			<button class="unselectAll btn" @click="unselectAll">Сбросить выделение</button>
 		</div>

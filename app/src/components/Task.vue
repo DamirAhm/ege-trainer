@@ -16,20 +16,20 @@
 			v-model="userInput"
 			placeholder="Ответ"
 			class="problem-userInput"
-			:disabled="this.state != ''"
+			:disabled="state != ''"
 			@keydown.enter="handleCheck"
 		/>
 
 		<template v-if="solutionVisible">
-			<div class="problem-solution" v-html="this.solution"></div>
+			<div class="problem-solution" v-if="solution.length < 1000" v-html="solution"></div>
 
 			<div class="problem-footer">
 				<div class="problem-answer">
-					<div v-if="this.answerType === 'text'">Ответ: {{ this.answer }}</div>
-					<div v-else v-html="this.answer"></div>
+					<div v-if="answerType === 'text'">Ответ: {{ this.answer }}</div>
+					<div v-else v-html="answer"></div>
 				</div>
 
-				<div class="btns">
+				<div class="problem-buttons">
 					<button
 						v-if="progressStoped"
 						class="btn problem-continueRemoving"
@@ -42,8 +42,8 @@
 					</button>
 					<button
 						class="btn problem-correctAnswer"
-						@click="this.state = 'solved'"
-						v-if="this.state != 'solved'"
+						@click="state = 'solved'"
+						v-if="state != 'solved'"
 					>
 						Ответ верный
 					</button>
@@ -56,7 +56,7 @@
 			:style="{
 				width: `${removeProgress}%`,
 				backgroundColor: borderColor,
-				transition: `${this.removeDelay / 100}s`,
+				transition: `${removeDelay / 100}s`,
 			}"
 		></div>
 
@@ -188,6 +188,10 @@
 		outline-color: var(--green);
 	}
 
+	.problem-text_value {
+		margin-top: 20px;
+	}
+
 	.problem-task,
 	.problem-solution_text,
 	.problem-answer_text {
@@ -218,8 +222,8 @@
 		align-items: center;
 	}
 
-	.problem-buttons button:nth-child(1) {
-		margin-right: 10px;
+	.problem-buttons button:nth-child(2) {
+		margin-left: 10px;
 	}
 
 	.problem-removeProgressBar {

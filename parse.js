@@ -83,7 +83,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 
 			tasks.push(...nextUrlTasks);
 		}
-
+		await page.close();
 		return tasks.sort(() => Math.random() - 0.5).slice(0, amount);
 	} catch (e) {
 		console.error(e);
@@ -226,6 +226,7 @@ export async function getSubjects(browser) {
 			}
 		});
 
+		await page.close();
 		return subjects;
 	} catch (e) {
 		console.log(e);

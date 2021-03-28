@@ -105,7 +105,7 @@
 
 <style scoped>
 	.timer {
-		position: absolute;
+		position: fixed;
 		top: 10px;
 		left: 10px;
 		font-size: 1.1rem;

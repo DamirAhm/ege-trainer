@@ -32,6 +32,8 @@
 	import { clearStorage, getInfoFromStorage, updateStorage } from '../utils';
 	import { mapState } from 'vuex';
 
+	const IS_PROGRESSIVE = true;
+
 	export default {
 		name: 'TasksPage',
 		components: {
@@ -82,14 +84,34 @@
 				clearStorage();
 
 				this.loading = true;
-				getTasks(subjectPrefix, issue, { amount: this.initialAmountOfProblems })
-					.then((t) => {
-						this.problems = t.map((task) => ({ ...task, visible: true }));
-						this.loading = false;
 
-						updateStorage({ problems: this.problems, issue });
-					})
-					.catch((e) => this.$router.push({ name: 'Page404' }));
+				if (IS_PROGRESSIVE) {
+					const issues = issue.split('+');
+
+					for (const is of issues) {
+						getTasks(subjectPrefix, is, { amount: this.initialAmountOfProblems })
+							.then((t) => {
+								this.problems = this.problems
+									.concat(t.map((task) => ({ ...task, visible: true })))
+									.sort(
+										({ issue: issueA }, { issue: issueB }) => +issueA - +issueB,
+									);
+								this.loading = false;
+
+								updateStorage({ problems: this.problems, issue });
+							})
+							.catch((e) => this.$router.push({ name: 'Page404' }));
+					}
+				} else {
+					getTasks(subjectPrefix, isue, { amount: this.initialAmountOfProblems })
+						.then((t) => {
+							this.problems = t.map((task) => ({ ...task, visible: true }));
+							this.loading = false;
+
+							updateStorage({ problems: this.problems, issue });
+						})
+						.catch((e) => this.$router.push({ name: 'Page404' }));
+				}
 			}
 		},
 		beforeRouteLeave() {
@@ -122,6 +144,7 @@
 				const element = this.tasksRefs.find((el) => el.dataset.id === firstVisible.id);
 
 				element.scrollIntoView();
+				element.querySelector('input').focus?.();
 			},
 			async appendProblemsForFail() {
 				if (this.problemsPromises.length > 0) {

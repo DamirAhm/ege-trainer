@@ -5,7 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "gzip": "gzip -9 -f ../dist/js/* && gzip -9 -f ../dist/css/*",
+    "gzip": "gzip -9 -f ../dist/js/* && gzip -9 -f ../dist/css/*"
   },
   "dependencies": {
     "axios": "^0.21.1",
