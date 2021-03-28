@@ -78,7 +78,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 			timesLoaded++;
 		}
 
-		const tasks = getTasksOnPage($, initialPageUrl);
+		const tasks = getTasksOnPage($);
 
 		if (tasks.length < amount) {
 			tasksPageCache.set(initialPageUrl, tasks.slice(tasks.length - (timesLoaded + 1) * 5));
@@ -96,12 +96,16 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 			}
 		} else {
 			setTimeout(async () => {
-				const fullTasks = await loadTasksFromPage({
-					urlSet: [initialPageUrl],
-					amount: 200,
-				});
+				const fullTasks = await loadTasksFromPage(
+					{
+						urlSet: [initialPageUrl],
+						amount: 200,
+					},
+					browser,
+				);
 
 				tasksPageCache.set(initialPageUrl, fullTasks);
+				await page.close();
 			});
 		}
 

@@ -45,7 +45,7 @@ export function isCheckableAnswer(answer) {
 		const [_, value] = answer.match(answerRegExp);
 
 		//! Осторожно костыли
-		if (value.search(/[()|]/) === -1) {
+		if (value.search(/[()]/) === -1) {
 			return true;
 		}
 	}
@@ -53,7 +53,11 @@ export function isCheckableAnswer(answer) {
 	return false;
 }
 export function getCheckableAnswer(answer) {
-	return answer.match(answerRegExp)[1];
+	return answer
+		.match(answerRegExp)[1]
+		.split('|')
+		.map((e) => e.trim())
+		.filter(Boolean);
 }
 
 export function randomSort(array) {

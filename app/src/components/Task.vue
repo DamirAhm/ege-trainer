@@ -25,7 +25,7 @@
 
 			<div class="problem-footer">
 				<div class="problem-answer">
-					<div v-if="answerType === 'text'">Ответ: {{ this.answer }}</div>
+					<div v-if="answerType === 'text'">Ответ: {{ this.answer.join(' | ') }}</div>
 					<div v-else v-html="answer"></div>
 				</div>
 
@@ -114,7 +114,7 @@
 			handleCheck() {
 				this.solutionVisible = true;
 
-				if (this.userInput === this.answer) {
+				if (this.answer.includes(this.userInput)) {
 					this.state = taskStates.solved;
 				} else {
 					this.state = taskStates.failed;
