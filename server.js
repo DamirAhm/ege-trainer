@@ -7,6 +7,7 @@ import fastifyExpress from 'fastify-express';
 import sirv from 'sirv';
 import compression from 'compression';
 import fs from 'fs';
+import os from 'os';
 
 import { getSubjects, getTopics, loadTasksFromPage } from './parse.js';
 import { getUrlSetFromTopic, getUrlFromPrefix } from './utils.js';
@@ -15,6 +16,14 @@ import { responseTypes } from './constants.js';
 const __dirname = process.cwd();
 
 const topicsCache = new Map();
+
+const executablePath =
+	os.platform() === 'linux'
+		? path.resolve(
+				__dirname,
+				'node_modules/puppeteer/.local-chromium/linux-856583/chrome-linux/chrome',
+		  )
+		: path.resolve(__dirname, './node_modules/puppeteer/.local-chromium/chrome-win/chrome.exe');
 
 (async () => {
 	const app = fastify();
@@ -31,10 +40,8 @@ const topicsCache = new Map();
 	app.use(compression());
 
 	const browser = await pup.launch({
-		executablePath: path.resolve(
-			__dirname,
-			'./node_modules/puppeteer/.local-chromium/chrome-win/chrome.exe',
-		),
+		executablePath,
+		args: ['--no-sandbox'],
 	});
 
 	app.get('/api/subjects', async (req, res) => {

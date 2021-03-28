@@ -151,7 +151,6 @@
 
 				return await getTasks(subjectPrefix, issue, { amount, used: this.used });
 			},
-
 			saveUsedToStore() {
 				const { subjectPrefix } = this.$route.params;
 				this.$store.commit('addUsed', {
