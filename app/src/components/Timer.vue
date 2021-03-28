@@ -6,11 +6,15 @@
 		</div>
 		<div v-else-if="[timerStates.started, timerStates.stoped].includes(state)">
 			<div class="passed">Прошло {{ timerString }}</div>
-			<button class="btn" @click="stop" v-if="state === timerStates.started">
+			<button
+				class="btn"
+				@click="state = timerStates.stoped"
+				v-if="state === timerStates.started"
+			>
 				Остановить
 			</button>
 			<div v-else>
-				<button class="btn" @click="start">Продолжить</button>
+				<button class="btn" @click="state = timerStates.started">Продолжить</button>
 				<button class="btn" @click="reset">Сбросить</button>
 			</div>
 		</div>
@@ -24,6 +28,7 @@
 
 <script>
 	import { timerStates } from '@/constants';
+	import { getTimerStateFromStorage, setTimerStateInStorage } from '@/utils';
 
 	export default {
 		name: 'Timer',
@@ -41,6 +46,16 @@
 
 				timerStates: timerStates,
 			};
+		},
+		created() {
+			const savedTimerState = getTimerStateFromStorage();
+
+			if (savedTimerState) {
+				const { duration, timePassed, state } = savedTimerState;
+				this.duration = duration ?? this.duration;
+				this.state = state ?? this.state;
+				this.timePassed = timePassed ?? this.timePassed;
+			}
 		},
 		computed: {
 			maxTime() {
@@ -67,19 +82,6 @@
 			},
 		},
 		methods: {
-			start() {
-				if (this.duration !== '00:00') {
-					this.state = timerStates.started;
-
-					if (!this.startedAt) this.startedAt = new Date();
-
-					this.interval = setInterval(this.countdown, this.timeUnit);
-				}
-			},
-			stop() {
-				this.state = timerStates.stoped;
-				clearInterval(this.interval);
-			},
 			reset() {
 				this.interval = null;
 				this.timePassed = 0;
@@ -94,10 +96,42 @@
 			timePassed() {
 				if (this.timePassed / 1000 > this.maxTime && this.state === timerStates.started) {
 					this.state = timerStates.finished;
-					clearInterval(this.interval);
-
-					alert('Время вышло');
 				}
+
+				if (this.timePassed % 1000 === 0) {
+					setTimerStateInStorage({ timePassed: this.timePassed });
+				}
+			},
+			duration() {
+				setTimerStateInStorage({ duration: this.duration });
+			},
+			state() {
+				switch (this.state) {
+					case timerStates.started: {
+						if (this.duration !== '00:00') {
+							this.interval = setInterval(this.countdown, this.timeUnit);
+						}
+						break;
+					}
+					case timerStates.stoped: {
+						clearInterval(this.interval);
+						break;
+					}
+					case timerStates.finished: {
+						clearInterval(this.interval);
+
+						alert('Время вышло');
+						break;
+					}
+					case timerStates.none: {
+						break;
+					}
+					default: {
+						console.error('Что то не так в таймере');
+					}
+				}
+
+				setTimerStateInStorage({ state: this.state });
 			},
 		},
 	};

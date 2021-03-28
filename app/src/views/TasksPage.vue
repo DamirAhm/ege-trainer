@@ -30,7 +30,7 @@
 <script>
 	import Task from '@/components/Task';
 	import { getTasks } from '../api';
-	import { clearStorage, getInfoFromStorage, updateStorage } from '../utils';
+	import { clearStorage, getProblemsInfoFromStorage, updateStorage } from '../utils';
 	import { mapState } from 'vuex';
 
 	const IS_PROGRESSIVE = true;
@@ -70,7 +70,7 @@
 		},
 		created() {
 			const { subjectPrefix, issue } = this.$route.params;
-			const { problems: savedProblems, issue: savedIssue } = getInfoFromStorage();
+			const { problems: savedProblems, issue: savedIssue } = getProblemsInfoFromStorage();
 
 			if (savedProblems && savedIssue === issue) {
 				this.problems = savedProblems;
@@ -144,8 +144,10 @@
 
 				const element = this.tasksRefs.find((el) => el.dataset.id === firstVisible.id);
 
-				element.scrollIntoView();
-				element.querySelector('input').focus?.();
+				if (element) {
+					element.scrollIntoView();
+					element.querySelector('input').focus();
+				}
 			},
 			removePromise(id) {
 				this.problemsPromises[id] = undefined;

@@ -14,19 +14,39 @@ export function updateStorage({ problems, issue }) {
 	}
 }
 
-export function getInfoFromStorage() {
-	const problems = JSON.parse(localStorage.getItem('problems'));
-	const issue = localStorage.getItem('issue');
+export function getProblemsInfoFromStorage() {
+	if (localStorage.getItem('problems') && localStorage.getItem('issue')) {
+		const problems = JSON.parse(localStorage.getItem('problems'));
+		const issue = localStorage.getItem('issue');
 
-	return {
-		problems,
-		issue,
-	};
+		return {
+			problems,
+			issue,
+		};
+	} else {
+		return {};
+	}
 }
 
 export function getSettingsFromStorage() {
-	return JSON.parse(localStorage.getItem('settings'));
+	if (localStorage.getItem('settings')) {
+		return JSON.parse(localStorage.getItem('settings'));
+	} else {
+		return null;
+	}
 }
 export function updateSettingsInStorage(newSettings) {
 	localStorage.setItem('settings', JSON.stringify(newSettings));
+}
+
+// {duration, state, passedTime}
+export function getTimerStateFromStorage() {
+	const timerState = JSON.parse(localStorage.getItem('timerState'));
+
+	return timerState;
+}
+export function setTimerStateInStorage(newTimerState) {
+	const oldTimerState = getTimerStateFromStorage() ?? {};
+
+	localStorage.setItem('timerState', JSON.stringify(Object.assign(oldTimerState, newTimerState)));
 }
