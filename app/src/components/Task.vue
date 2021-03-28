@@ -60,7 +60,7 @@
 			}"
 		></div>
 
-		<button class="problem-close" @click="$emit('remove'), $emit(state)">x</button>
+		<button class="problem-close" @click="$emit(state), $emit('remove')">x</button>
 	</div>
 </template>
 
@@ -116,7 +116,7 @@
 					this.state = taskStates.solved;
 				} else {
 					this.state = taskStates.failed;
-					this.$emit('initiallyFailed', this.issue);
+					this.$emit('initiallyFailed');
 				}
 
 				if (this.autoRemove) {
@@ -147,8 +147,8 @@
 			removeProgress() {
 				if (this.removeProgress === 0) {
 					clearInterval(this.progressInterval);
-					this.$emit('remove');
 					this.$emit(this.state);
+					this.$emit('remove');
 				}
 			},
 		},

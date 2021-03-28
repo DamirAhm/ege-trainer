@@ -18,8 +18,8 @@
 				:id="problem.id"
 				:issue="problem.issue"
 				@remove="removeProblem(problem)"
-				@failed="appendProblemsForFail"
-				@initiallyFailed="canFetchMore && loadNewProblems($event)"
+				@failed="appendProblemsForFail(problem.id)"
+				@initiallyFailed="canFetchMore && loadNewProblems(problem)"
 			/>
 		</div>
 	</div>
@@ -44,7 +44,7 @@
 				problems: [],
 				loading: false,
 
-				problemsPromises: [],
+				problemsPromises: {},
 				canFetchMore: true,
 
 				tasksRefs: [],
@@ -116,7 +116,7 @@
 		},
 		beforeRouteLeave() {
 			clearStorage();
-			saveUsedToStore();
+			this.saveUsedToStore();
 		},
 		methods: {
 			setTaskRef(el) {
@@ -129,12 +129,12 @@
 
 				updateStorage({ problems: this.problems });
 
-				if (!this.isAnyProblemVisible) {
+				if (!this.isAnyProblemVisible && this.problemsPromises[problem.id] === undefined) {
 					this.$router.push({
 						name: 'Topic',
 						params: { subjectPrefix: this.$route.params.subjectPrefix },
 					});
-				} else {
+				} else if (this.isAnyProblemVisible) {
 					this.scrollToFirstVisibleElement();
 				}
 			},
@@ -146,9 +146,9 @@
 				element.scrollIntoView();
 				element.querySelector('input').focus?.();
 			},
-			async appendProblemsForFail() {
-				if (this.problemsPromises.length > 0) {
-					const newProblems = await this.problemsPromises.shift();
+			async appendProblemsForFail(id) {
+				if (this.problemsPromises[id]) {
+					const newProblems = await this.problemsPromises[id];
 
 					this.problems = [
 						...this.problems,
@@ -156,7 +156,7 @@
 					];
 				}
 			},
-			async loadNewProblems(issue) {
+			async loadNewProblems({ issue, id }) {
 				if (this.canFetchMore) {
 					const promise = this.getMoreProblems(this.newProblemsForFail, issue);
 
@@ -166,13 +166,18 @@
 						}
 					});
 
-					this.problemsPromises = [...this.problemsPromises, promise];
+					this.problemsPromises[id] = promise;
 				}
 			},
 			async getMoreProblems(amount, issue) {
-				const { subjectPrefix } = this.$route.params;
+				try {
+					const { subjectPrefix } = this.$route.params;
 
-				return await getTasks(subjectPrefix, issue, { amount, used: this.used });
+					return await getTasks(subjectPrefix, issue, { amount, used: this.used });
+				} catch (err) {
+					console.error(e);
+					return [];
+				}
 			},
 			saveUsedToStore() {
 				const { subjectPrefix } = this.$route.params;
