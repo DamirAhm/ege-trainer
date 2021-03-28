@@ -145,8 +145,8 @@
 				const element = this.tasksRefs.find((el) => el.dataset.id === firstVisible.id);
 
 				if (element) {
-					element.scrollIntoView();
 					element.querySelector('input').focus();
+					element.scrollIntoView();
 				}
 			},
 			removePromise(id) {

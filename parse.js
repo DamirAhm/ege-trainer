@@ -10,6 +10,8 @@ import {
 	getTopicUrl,
 	isCheckableAnswer,
 	fixHTML,
+	randomSort,
+	randomElement,
 } from './utils.js';
 import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
@@ -18,12 +20,18 @@ import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 const PROBLEM_SELECTOR = '.problem_container';
 
 const problemCache = new Map();
+const tasksPageCache = new Map();
 
 export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, browser) {
 	try {
 		let timesLoaded = 0;
 
-		const initialPageUrl = urlSet[Math.floor(Math.random() * urlSet.length)];
+		const initialPageUrl = randomElement(urlSet);
+		if (tasksPageCache.has(initialPageUrl)) {
+			return randomSort(tasksPageCache.get(initialPageUrl))
+				.filter((task) => !used.includes(task.id))
+				.slice(0, amount);
+		}
 
 		const page = await browser.newPage();
 
@@ -72,19 +80,34 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 
 		const tasks = getTasksOnPage($, initialPageUrl);
 
-		if (tasks.length < amount && urlSet.length > 1) {
-			const nextUrlTasks = await loadTasksFromPage(
-				{
-					urlSet: urlSet.filter((url) => url !== initialPageUrl),
-					amount: amount - tasks.length,
-				},
-				browser,
-			);
+		if (tasks.length < amount) {
+			tasksPageCache.set(initialPageUrl, tasks.slice(tasks.length - (timesLoaded + 1) * 5));
 
-			tasks.push(...nextUrlTasks);
+			if (urlSet.length > 1) {
+				const nextUrlTasks = await loadTasksFromPage(
+					{
+						urlSet: urlSet.filter((url) => url !== initialPageUrl),
+						amount: amount - tasks.length,
+					},
+					browser,
+				);
+
+				tasks.push(...nextUrlTasks);
+			}
+		} else {
+			setTimeout(async () => {
+				const fullTasks = await loadTasksFromPage({
+					urlSet: [initialPageUrl],
+					amount: 200,
+				});
+
+				tasksPageCache.set(initialPageUrl, fullTasks);
+			});
 		}
-		await page.close();
-		return tasks.sort(() => Math.random() - 0.5).slice(0, amount);
+
+		return randomSort(tasks)
+			.filter((task) => !used.includes(task.id))
+			.slice(0, amount);
 	} catch (e) {
 		console.error(e);
 		return [];
@@ -93,7 +116,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 export function getLastProblemId($) {
 	return $(`${PROBLEM_SELECTOR}:last-child`).attr('id');
 }
-export function getTasksOnPage($, pageUrl) {
+export function getTasksOnPage($) {
 	const taskElements = $('.problem_container');
 	const parsedTaskElements = [
 		...taskElements.map((_, taskElement) => getTaskInfoFromElement($(taskElement))),

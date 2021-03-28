@@ -159,7 +159,8 @@
 
 <style>
 	.problem {
-		max-width: max(60vw, 300px);
+		max-width: max(43vw, 300px);
+		width: 100vw;
 		border: 2px solid black;
 		border-radius: 7px;
 		padding: 8px;
@@ -191,7 +192,7 @@
 	}
 
 	.problem-text_value {
-		margin-top: 20px;
+		margin-top: 10px;
 	}
 
 	.problem-task,

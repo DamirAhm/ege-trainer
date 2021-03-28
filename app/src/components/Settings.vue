@@ -23,11 +23,17 @@
 					v-model="initialAmountOfProblems"
 					type="number"
 					class="settings-form_input"
+					min="0"
 				/>
 			</label>
 			<label>
 				Новых задач за ошибку:
-				<input v-model="newProblemsForFail" type="number" class="settings-form_input" />
+				<input
+					v-model="newProblemsForFail"
+					type="number"
+					class="settings-form_input"
+					min="0"
+				/>
 			</label>
 		</div>
 	</div>

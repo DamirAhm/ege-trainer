@@ -55,3 +55,10 @@ export function isCheckableAnswer(answer) {
 export function getCheckableAnswer(answer) {
 	return answer.match(answerRegExp)[1];
 }
+
+export function randomSort(array) {
+	return array.sort(() => Math.random() - 0.5);
+}
+export function randomElement(array) {
+	return array[Math.floor(Math.random() * array.length)];
+}
