@@ -5,7 +5,6 @@ import fetch from 'node-fetch';
 
 import {
 	getCheckableAnswer,
-	getImageUrl,
 	getPrefixFromUrl,
 	getTopicUrl,
 	isCheckableAnswer,
@@ -35,7 +34,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 
 		const page = await browser.newPage();
 
-		await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded' });
+		await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
 
 		let $ = cheerio.load(await page.content());
 		let lastLoadedElem = getLastProblemId($);
@@ -137,7 +136,7 @@ export function getTaskInfoFromElement(taskElement) {
 
 	const text = taskElement.find('.probtext').text();
 
-	const haveExpand = taskElement.find('.expand').length > 0;
+	const haveExpand = taskElement.find('.expand .answer').length > 0;
 
 	let solution = [
 		...taskElement
@@ -212,11 +211,13 @@ export function parseSubtopics(subtopics, origin) {
 	}));
 }
 
+let subjectsCache = null;
 export async function getSubjects(browser) {
 	try {
+		if (subjectsCache !== null) return subjectsCache;
 		const page = await browser.newPage();
 
-		await page.goto(SITE_ORIGIN, { waitUntil: 'domcontentloaded' });
+		await page.goto(SITE_ORIGIN, { waitUntil: 'domcontentloaded', timeout: 0 });
 
 		const $ = cheerio.load(await page.content());
 
@@ -254,6 +255,8 @@ export async function getSubjects(browser) {
 		});
 
 		await page.close();
+
+		subjectsCache = subjects;
 		return subjects;
 	} catch (e) {
 		console.log(e);

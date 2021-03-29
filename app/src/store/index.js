@@ -17,7 +17,7 @@ export default createStore({
 				state.used[subjectPrefix] = newUsed;
 			}
 		},
-		[mutations.SET_SETTINGS](state, subjects) {
+		[mutations.SET_SUBJECTS](state, subjects) {
 			state.subjects = subjects;
 		},
 	},

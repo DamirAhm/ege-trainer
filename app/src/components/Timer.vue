@@ -2,7 +2,7 @@
 	<div class="timer">
 		<div v-if="state === timerStates.none" class="setup">
 			<input type="time" v-model="duration" />
-			<button class="start btn" @click="start">Начать</button>
+			<button class="start btn" @click="state = timerStates.started">Начать</button>
 		</div>
 		<div v-else-if="[timerStates.started, timerStates.stoped].includes(state)">
 			<div class="passed">Прошло {{ timerString }}</div>
