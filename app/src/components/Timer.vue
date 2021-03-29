@@ -1,5 +1,5 @@
 <template>
-	<div class="timer">
+	<div class="timer" :style="{ top: `${isHomepage ? 20 : 60}px` }">
 		<div v-if="state === timerStates.none" class="setup">
 			<input type="time" v-model="duration" />
 			<button class="start btn" @click="state = timerStates.started">Начать</button>
@@ -80,6 +80,9 @@
 					'0',
 				)}`;
 			},
+			isHomepage() {
+				return this.$route.name === 'Subjects';
+			},
 		},
 		methods: {
 			reset() {
@@ -140,8 +143,7 @@
 <style scoped>
 	.timer {
 		position: fixed;
-		top: 10px;
-		left: 10px;
+		left: 20px;
 		font-size: 1.1rem;
 	}
 	.timer input {

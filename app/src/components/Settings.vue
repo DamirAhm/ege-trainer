@@ -40,7 +40,7 @@
 </template>
 
 <script>
-	import GearIcon from '@/components/GearIcon';
+	import GearIcon from './icons/GearIcon';
 	import { mutations } from '../constants';
 	import { updateSettingsInStorage, getSettingsFromStorage } from '../utils';
 

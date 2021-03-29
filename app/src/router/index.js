@@ -1,13 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import SubjectSelectionPage from '../views/SubjectSelectionPage.vue';
-import TopicSelectionPage from '../views/TopicSelectionPage.vue';
-import TasksPage from '../views/TasksPage.vue';
-import Page404 from '../views/Page404.vue';
+import SubjectSelectionPage from '@/views/SubjectSelectionPage.vue';
+import TopicSelectionPage from '@/views/TopicSelectionPage.vue';
+import TasksPage from '@/views/TasksPage.vue';
+import Page404 from '@/views/Page404.vue';
+import { subjectNamesByPrefix } from '@/constants';
 
 const routes = [
 	{
 		path: '/',
-		name: 'Subject',
+		name: 'Subjects',
 		component: SubjectSelectionPage,
 		meta: {
 			title: 'Предметы',
@@ -15,7 +16,7 @@ const routes = [
 	},
 	{
 		path: '/topics/:subjectPrefix',
-		name: 'Topic',
+		name: 'Topics',
 		component: TopicSelectionPage,
 		meta: {
 			title: 'Темы',
@@ -48,13 +49,33 @@ const routes = [
 ];
 
 const router = createRouter({
-	beforeEach(toRoute, _, next) {
-		window.document.title = toRoute.meta && toRoute.meta.title ? toRoute.meta.title : 'Home';
-
-		next();
-	},
 	history: createWebHistory(process.env.BASE_URL),
 	routes,
 });
+
+router.beforeEach((toRoute, _, next) => {
+	const { subjectPrefix } = toRoute.params;
+
+	document.title = `${toRoute.meta.title} ${
+		subjectPrefix && subjectNamesByPrefix[subjectPrefix]
+			? 'по ' + subjectNamesByPrefix[subjectPrefix]
+			: ''
+	}`;
+
+	next();
+});
+
+export const getBackRoute = (curRoute) => {
+	if (['404', 'Page404', 'Topics'].includes(curRoute.name)) return { name: 'Subjects' };
+	else if (['Tasks'].includes(curRoute.name)) {
+		const { subjectPrefix } = curRoute.params;
+
+		if (subjectPrefix) {
+			return { name: 'Topics', params: { subjectPrefix } };
+		}
+	}
+
+	return 'Page404';
+};
 
 export default router;

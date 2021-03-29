@@ -60,7 +60,7 @@
 			}"
 		></div>
 
-		<button class="problem-close" @click="$emit(state), $emit('remove')">
+		<button ref="close" class="problem-close" @click="$emit(state), $emit('remove')">
 			x
 		</button>
 	</div>
@@ -76,7 +76,7 @@
 			task: String,
 			text: String,
 			solution: String,
-			answer: String,
+			answer: Array,
 			answerType: String,
 			issue: String,
 			id: String,
@@ -87,7 +87,7 @@
 				textVisible: false,
 
 				userInput: '',
-				state: '',
+				state: taskStates.none,
 
 				removeProgress: 0,
 
@@ -97,9 +97,9 @@
 		},
 		computed: {
 			borderColor() {
-				if (this.state === '') return 'black';
+				if (this.state === taskStates.none) return 'black';
 				else if (this.state === taskStates.solved) return 'var(--green)';
-				else return 'var(--red)';
+				else if (this.state === taskStates.failed) return 'var(--red)';
 			},
 			...mapState({
 				removeDelay: (state) => state.settings.removeDelay,
@@ -128,6 +128,8 @@
 						(this.removeDelay * 1000) / 100,
 					);
 				}
+
+				this.$refs.close.focus();
 			},
 
 			stopRemoving() {

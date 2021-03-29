@@ -6,6 +6,7 @@ export const answerTypes = {
 export const taskStates = {
 	solved: 'solved',
 	failed: 'failed',
+	none: 'none',
 };
 
 export const mutations = {
@@ -19,4 +20,10 @@ export const timerStates = {
 	started: 'started',
 	stoped: 'stoped',
 	finished: 'finished',
+};
+
+export const subjectNamesByPrefix = {
+	'math-ege': 'математике',
+	'rus-ege': 'русскому',
+	'inf-ege': 'информатике',
 };

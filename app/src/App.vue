@@ -1,5 +1,6 @@
 <template>
 	<div class="container">
+		<BackButton v-if="!isHomepage" />
 		<Timer />
 		<Settings />
 		<router-view />
@@ -9,12 +10,19 @@
 <script>
 	import Settings from './components/Settings';
 	import Timer from './components/Timer';
+	import BackButton from './components/BackButton';
 
 	export default {
 		name: 'App',
 		components: {
 			Settings,
 			Timer,
+			BackButton,
+		},
+		computed: {
+			isHomepage() {
+				return this.$route.name === 'Subjects';
+			},
 		},
 	};
 </script>
