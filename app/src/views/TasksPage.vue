@@ -32,6 +32,7 @@
 	import { getTasks } from '../api';
 	import { clearStorage, getProblemsInfoFromStorage, updateStorage } from '../utils';
 	import { mapState } from 'vuex';
+	import { mutations } from '../constants';
 
 	const IS_PROGRESSIVE = true;
 
@@ -187,7 +188,7 @@
 			},
 			saveUsedToStore() {
 				const { subjectPrefix } = this.$route.params;
-				this.$store.commit('addUsed', {
+				this.$store.commit(mutations.ADD_USED, {
 					subjectPrefix,
 					used: this.used.filter(
 						(id) =>

@@ -21,6 +21,7 @@
 <script>
 	import { getSubjects } from '@/api';
 	import ListItem from '@/components/ListItem.vue';
+	import { mutations } from '../constants';
 
 	export default {
 		name: 'SubjectSelectionPage',
@@ -35,14 +36,20 @@
 			};
 		},
 		created() {
-			this.loading = true;
-			getSubjects()
-				.then((s) => {
-					this.subjects = s;
+			if (this.$store.state.subjects !== null) {
+				this.subjects = this.$store.state.subjects;
+			} else {
+				this.loading = true;
+				getSubjects()
+					.then((s) => {
+						this.subjects = s;
 
-					this.loading = false;
-				})
-				.catch((e) => (this.error = 'Чот ошибка какая то ¯\\_(ツ)_/¯'));
+						this.loading = false;
+
+						this.$store.commit(mutations.SET_SUBJECTS, this.subjects);
+					})
+					.catch((e) => (this.error = 'Чот ошибка какая то ¯\\_(ツ)_/¯'));
+			}
 		},
 	};
 </script>

@@ -10,6 +10,8 @@ export const taskStates = {
 
 export const mutations = {
 	SET_SETTINGS: 'SET_SETTINGS',
+	ADD_USED: 'ADD_USED',
+	SET_SUBJECTS: 'SET_SUBJECTS',
 };
 
 export const timerStates = {
