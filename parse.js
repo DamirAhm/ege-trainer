@@ -21,63 +21,69 @@ const PROBLEM_SELECTOR = '.problem_container';
 const problemCache = new Map();
 const tasksPageCache = new Map();
 
-export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, browser) {
+export async function loadTasksFromPage(
+	{ urlSet, amount = 5, used = [], pickUp = false },
+	browser,
+) {
 	try {
 		let timesLoaded = 0;
 
 		const initialPageUrl = randomElement(urlSet);
-		if (tasksPageCache.has(initialPageUrl)) {
-			return randomSort(tasksPageCache.get(initialPageUrl))
-				.filter((task) => !used.includes(task.id))
-				.slice(0, amount);
-		}
-
 		const page = await browser.newPage();
 
-		await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
+		let tasks;
 
-		let $ = cheerio.load(await page.content());
-		let lastLoadedElem = getLastProblemId($);
+		if (tasksPageCache.size === urlSet.length && !pickUp) {
+			//@ts-ignore
+			const problems = randomSort([...problemCache.values()].flat());
+			console.log(problems.length);
+			tasks = problems.filter((task) => !used.includes(task.id)).slice(0, amount);
+		} else {
+			await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
 
-		let foundUsedProblems = 0;
+			let $ = cheerio.load(await page.content());
+			let lastLoadedElem = getLastProblemId($);
 
-		while ((timesLoaded + 1) * 5 - foundUsedProblems < amount) {
-			await page.evaluate(() => {
-				const lastProblem = document.querySelector('.problem_container:last-child');
-				if (lastProblem) {
-					lastProblem.scrollIntoView();
-				}
-			});
+			let foundUsedProblems = 0;
 
-			//Wait for selector for 1s or get undefined;
-			const resultOfWaiting = await Promise.race([
-				page.waitForSelector(
-					`${PROBLEM_SELECTOR}:nth-of-type(${(timesLoaded + 1) * 5 + 3})`,
-				),
-				new Promise((resolve) => {
-					setTimeout(() => {
-						resolve(undefined);
-					}, 1000);
-				}),
-			]);
-			if (resultOfWaiting === undefined) break;
+			while ((timesLoaded + 1) * 5 - foundUsedProblems < amount) {
+				await page.evaluate(() => {
+					const lastProblem = document.querySelector('.problem_container:last-child');
+					if (lastProblem) {
+						lastProblem.scrollIntoView();
+					}
+				});
 
-			const pageHtml = await page.content();
-			$ = cheerio.load(pageHtml);
-			const actualLastLoadedElem = getLastProblemId($);
+				//Wait for selector for 1s or get undefined;
+				const resultOfWaiting = await Promise.race([
+					page.waitForSelector(
+						`${PROBLEM_SELECTOR}:nth-of-type(${(timesLoaded + 1) * 5 + 3})`,
+					),
+					new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(undefined);
+						}, 1000);
+					}),
+				]);
+				if (resultOfWaiting === undefined) break;
 
-			if (actualLastLoadedElem === lastLoadedElem || actualLastLoadedElem === undefined)
-				break;
+				const pageHtml = await page.content();
+				$ = cheerio.load(pageHtml);
+				const actualLastLoadedElem = getLastProblemId($);
 
-			$(PROBLEM_SELECTOR).each((_, el) => {
-				if (used.includes(el.attribs.id)) foundUsedProblems++;
-			});
+				if (actualLastLoadedElem === lastLoadedElem || actualLastLoadedElem === undefined)
+					break;
 
-			lastLoadedElem = actualLastLoadedElem;
-			timesLoaded++;
+				$(PROBLEM_SELECTOR).each((_, el) => {
+					if (used.includes(el.attribs.id)) foundUsedProblems++;
+				});
+
+				lastLoadedElem = actualLastLoadedElem;
+				timesLoaded++;
+			}
+
+			tasks = getTasksOnPage($);
 		}
-
-		const tasks = getTasksOnPage($);
 
 		if (tasks.length < amount) {
 			tasksPageCache.set(initialPageUrl, tasks.slice(tasks.length - (timesLoaded + 1) * 5));
@@ -87,6 +93,7 @@ export async function loadTasksFromPage({ urlSet, amount = 5, used = [] }, brows
 					{
 						urlSet: urlSet.filter((url) => url !== initialPageUrl),
 						amount: amount - tasks.length,
+						pickUp: true,
 					},
 					browser,
 				);
@@ -158,7 +165,7 @@ export function getTaskInfoFromElement(taskElement) {
 
 		for (const p of ps) {
 			if (isCheckableAnswer(taskElement.find(p).text())) {
-				answer = getCheckableAnswer(taskElement.find(p).text());
+				answer = taskElement.find(p).text();
 				break;
 			} else if (taskElement.find(p).text().startsWith('Ответ')) {
 				answer = taskElement.find(p).html();

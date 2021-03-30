@@ -9,7 +9,8 @@
     "dev": "supervisor server",
     "build": "npm run build --prefix ./app",
     "gzip": "gzip -9 -f ./dist/js/* && gzip -9 -f ./dist/css/*",
-    "postbuild": "rm -rf ./dist && cp -r ./app/dist ./ && npm run gzip"
+    "postbuild": "rm -rf ./dist && cp -r ./app/dist ./ && npm run gzip",
+    "deploy": "rsync -e \"sshpass -p $(cat ~/.ssh/damirahm.ru_password) ssh -i $HOME/.ssh/damirahm.ru_rsa -o StrictHostKeyChecking=no\" --archive --compress --progress --delete . root@damirahm.ru:/root/ege-trainer"
   },
   "keywords": [],
   "author": "",

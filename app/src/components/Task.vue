@@ -16,7 +16,7 @@
 			v-model="userInput"
 			placeholder="Ответ"
 			class="problem-userInput"
-			:disabled="state != ''"
+			:disabled="state !== taskStates.none"
 			@keydown.enter="handleCheck"
 		/>
 
@@ -30,6 +30,7 @@
 				</div>
 
 				<div class="problem-buttons">
+					<a :href="taskLink" target="_blank" class="btn">Посмотреть задание</a>
 					<button
 						v-if="progressStoped"
 						class="btn problem-continueRemoving"
@@ -68,7 +69,8 @@
 
 <script>
 	import { mapState } from 'vuex';
-	import { taskStates } from '../constants';
+	import { taskStates, answerTypes } from '../constants';
+	import { getProblemId } from '../utils';
 
 	export default {
 		name: 'Task',
@@ -93,6 +95,8 @@
 
 				progressInterval: undefined,
 				progressStoped: false,
+
+				taskStates,
 			};
 		},
 		computed: {
@@ -100,6 +104,12 @@
 				if (this.state === taskStates.none) return 'black';
 				else if (this.state === taskStates.solved) return 'var(--green)';
 				else if (this.state === taskStates.failed) return 'var(--red)';
+			},
+			taskLink() {
+				const { subjectPrefix } = this.$route.params;
+				const id = getProblemId(this.id);
+
+				return `https://${subjectPrefix}.sdamgia.ru/problem?id=${id}`;
 			},
 			...mapState({
 				removeDelay: (state) => state.settings.removeDelay,
@@ -114,7 +124,7 @@
 			handleCheck() {
 				this.solutionVisible = true;
 
-				if (this.answer.includes(this.userInput)) {
+				if (this.answer.includes(this.userInput) && this.answerType !== answerTypes.html) {
 					this.state = taskStates.solved;
 				} else {
 					this.state = taskStates.failed;
@@ -227,7 +237,7 @@
 		align-items: center;
 	}
 
-	.problem-buttons button:nth-child(2) {
+	.problem-buttons button:nth-child(n) {
 		margin-left: 10px;
 	}
 

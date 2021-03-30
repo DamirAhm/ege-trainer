@@ -50,3 +50,7 @@ export function setTimerStateInStorage(newTimerState) {
 
 	localStorage.setItem('timerState', JSON.stringify(Object.assign(oldTimerState, newTimerState)));
 }
+
+export function getProblemId(id) {
+	return id.match(/problem_(.+)/)[1];
+}
