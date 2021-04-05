@@ -61,7 +61,11 @@
 			}"
 		></div>
 
-		<button ref="close" class="problem-close" @click="$emit(state), $emit('remove')">
+		<button
+			ref="close"
+			class="problem-close"
+			@click="state !== taskStates.none && $emit(state), $emit('remove')"
+		>
 			x
 		</button>
 	</div>
@@ -119,7 +123,7 @@
 		beforeUnmount() {
 			if (this.progressInterval) clearInterval(this.progressInterval);
 		},
-		emits: ['remove', 'solved', 'failed', 'initiallyFailed'],
+		emits: ['remove', taskStates.solved, taskStates.failed, 'initiallyFailed'],
 		methods: {
 			handleCheck() {
 				this.solutionVisible = true;
@@ -138,8 +142,6 @@
 						(this.removeDelay * 1000) / 100,
 					);
 				}
-
-				this.$refs.close.focus();
 			},
 
 			stopRemoving() {

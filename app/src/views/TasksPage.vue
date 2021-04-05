@@ -33,6 +33,7 @@
 	import { clearStorage, getProblemsInfoFromStorage, updateStorage } from '../utils';
 	import { mapState } from 'vuex';
 	import { mutations } from '../constants';
+	import { getProblemId } from '../utils';
 
 	const IS_PROGRESSIVE = true;
 
@@ -59,7 +60,10 @@
 				const { subjectPrefix } = this.$route.params;
 				const usedInSubject = this.$store.state.used[subjectPrefix] ?? [];
 
-				return this.problems.map(({ id }) => id).concat(usedInSubject);
+				return this.problems
+					.map(({ id }) => id)
+					.concat(usedInSubject)
+					.map((id) => getProblemId(id));
 			},
 			isAnyProblemVisible() {
 				return this.problems.some(({ visible }) => visible);
@@ -70,6 +74,7 @@
 			}),
 		},
 		created() {
+			window.a = this;
 			const { subjectPrefix, issue } = this.$route.params;
 			const { problems: savedProblems, issue: savedIssue } = getProblemsInfoFromStorage();
 
@@ -118,7 +123,7 @@
 		},
 		beforeRouteLeave() {
 			clearStorage();
-			this.saveUsedToStore();
+			this.saveUsedToStore(this.used);
 		},
 		methods: {
 			setTaskRef(el) {
@@ -133,7 +138,7 @@
 
 				if (!this.isAnyProblemVisible && this.problemsPromises[problem.id] === undefined) {
 					this.$router.push({
-						name: 'Topic',
+						name: 'Topics',
 						params: { subjectPrefix: this.$route.params.subjectPrefix },
 					});
 				} else if (this.isAnyProblemVisible) {
@@ -156,11 +161,12 @@
 			async appendProblemsForFail(id) {
 				if (this.problemsPromises[id]) {
 					const newProblems = await this.problemsPromises[id];
-
-					this.problems = [
-						...this.problems,
-						...newProblems.map((prob) => ({ ...prob, visible: true })),
-					];
+					const newProblemsWithVisibleProp = newProblems.map((prob) => ({
+						...prob,
+						visible: true,
+					}));
+					//TODO Без фильтра добавляется по 2 экземпляра каждой задачи ????
+					this.problems = [...this.problems, ...newProblemsWithVisibleProp];
 				}
 			},
 			async loadNewProblems({ issue, id }) {
@@ -186,15 +192,11 @@
 					return [];
 				}
 			},
-			saveUsedToStore() {
+			saveUsedToStore(used) {
 				const { subjectPrefix } = this.$route.params;
 				this.$store.commit(mutations.ADD_USED, {
 					subjectPrefix,
-					used: this.used.filter(
-						(id) =>
-							this.problems.find(({ id: probId }) => probId === id)?.visible ===
-							false,
-					),
+					used,
 				});
 			},
 		},

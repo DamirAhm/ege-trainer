@@ -51,6 +51,11 @@ export function setTimerStateInStorage(newTimerState) {
 	localStorage.setItem('timerState', JSON.stringify(Object.assign(oldTimerState, newTimerState)));
 }
 
+const problemIdRegExp = /problem_([0-9]+)/;
 export function getProblemId(id) {
-	return id.match(/problem_(.+)/)[1];
+	if (problemIdRegExp.test(id)) {
+		return id.match(problemIdRegExp)[1];
+	} else {
+		throw new Error('Problem id doesn`t match format needed problem_[id], got: ' + id);
+	}
 }
