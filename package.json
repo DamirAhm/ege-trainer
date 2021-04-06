@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server",
+    "postinstall": "touch savedContent.json && echo '{subjects: null, topics: null, tasks: {}}' >> savedContent.json",
     "dev": "supervisor server",
     "build": "npm run build --prefix ./app",
     "gzip": "gzip -9 -f ./dist/js/* && gzip -9 -f ./dist/css/*",

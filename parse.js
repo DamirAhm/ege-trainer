@@ -11,6 +11,9 @@ import {
 	fixHTML,
 	randomSort,
 	randomElement,
+	getSavedContent,
+	setSavedContent,
+	getThemeFromUrl,
 } from './utils.js';
 import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
@@ -18,106 +21,161 @@ import { SITE_ORIGIN, ANSWER_TYPES } from './constants.js';
 
 const PROBLEM_SELECTOR = '.problem_container';
 
-const problemCache = new Map();
-const tasksPageCache = new Map();
+const SAVED_CONTENT = getSavedContent();
+
+const { tasks: tasksPageCache } = SAVED_CONTENT;
 
 export async function loadTasksFromPage(
-	{ urlSet, amount = 5, used = [], pickUp = false },
+	{ urlSet, amount = 5, used = [], pickUp = false, issue },
 	browser,
 ) {
 	try {
-		let timesLoaded = 0;
+		if (urlSet.length > 0) {
+			let timesLoaded = 0;
 
-		const initialPageUrl = randomElement(urlSet);
-		const page = await browser.newPage();
+			const initialPageUrl = randomElement(urlSet);
+			const page = await browser.newPage();
 
-		let tasks;
+			let tasks;
 
-		if (tasksPageCache.size === urlSet.length && !pickUp) {
-			//@ts-ignore
-			const problems = randomSort([...problemCache.values()].flat());
-			console.log(problems.length);
-			tasks = problems.filter((task) => !used.includes(task.id)).slice(0, amount);
-		} else {
-			await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
+			const subjectPrefix = getPrefixFromUrl(urlSet[0]);
+			let savedThemes = tasksPageCache[subjectPrefix]?.[issue];
+			const theme = getThemeFromUrl(initialPageUrl);
 
-			let $ = cheerio.load(await page.content());
-			let lastLoadedElem = getLastProblemId($);
+			if (savedThemes && Object.keys(savedThemes)?.length === urlSet.length && !pickUp) {
+				const savedProblems = Object.values(tasksPageCache[subjectPrefix][issue]);
+				//@ts-ignore
+				const problems = randomSort(savedProblems.flat());
 
-			let foundUsedProblems = 0;
+				tasks = problems.filter((task) => !used.includes(task.id)).slice(0, amount);
+			} else {
+				if (savedThemes?.[theme]) {
+					tasks = savedThemes[theme];
+				} else {
+					await page.goto(initialPageUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
 
-			while ((timesLoaded + 1) * 5 - foundUsedProblems < amount) {
-				await page.evaluate(() => {
-					const lastProblem = document.querySelector('.problem_container:last-child');
-					if (lastProblem) {
-						lastProblem.scrollIntoView();
+					let $ = cheerio.load(await page.content());
+					let lastLoadedElem = getLastProblemId($);
+
+					let foundUsedProblems = 0;
+
+					while ((timesLoaded + 1) * 5 - foundUsedProblems < amount) {
+						await page.evaluate(() => {
+							const lastProblem = document.querySelector(
+								'.problem_container:last-child',
+							);
+							if (lastProblem) {
+								lastProblem.scrollIntoView();
+							}
+						});
+
+						//Wait for selector for 1s or get undefined;
+						const resultOfWaiting = await Promise.race([
+							page.waitForSelector(
+								`${PROBLEM_SELECTOR}:nth-of-type(${(timesLoaded + 1) * 5 + 3})`,
+							),
+							new Promise((resolve) => {
+								setTimeout(() => {
+									resolve(undefined);
+								}, 1000);
+							}),
+						]);
+						if (resultOfWaiting === undefined) break;
+
+						const pageHtml = await page.content();
+						$ = cheerio.load(pageHtml);
+						const actualLastLoadedElem = getLastProblemId($);
+
+						if (
+							actualLastLoadedElem === lastLoadedElem ||
+							actualLastLoadedElem === undefined
+						)
+							break;
+
+						$(PROBLEM_SELECTOR).each((_, el) => {
+							if (used.includes(el.attribs.id)) foundUsedProblems++;
+						});
+
+						lastLoadedElem = actualLastLoadedElem;
+						timesLoaded++;
 					}
-				});
 
-				//Wait for selector for 1s or get undefined;
-				const resultOfWaiting = await Promise.race([
-					page.waitForSelector(
-						`${PROBLEM_SELECTOR}:nth-of-type(${(timesLoaded + 1) * 5 + 3})`,
-					),
-					new Promise((resolve) => {
-						setTimeout(() => {
-							resolve(undefined);
-						}, 1000);
-					}),
-				]);
-				if (resultOfWaiting === undefined) break;
-
-				const pageHtml = await page.content();
-				$ = cheerio.load(pageHtml);
-				const actualLastLoadedElem = getLastProblemId($);
-
-				if (actualLastLoadedElem === lastLoadedElem || actualLastLoadedElem === undefined)
-					break;
-
-				$(PROBLEM_SELECTOR).each((_, el) => {
-					if (used.includes(el.attribs.id)) foundUsedProblems++;
-				});
-
-				lastLoadedElem = actualLastLoadedElem;
-				timesLoaded++;
+					tasks = getTasksOnPage($);
+				}
 			}
 
-			tasks = getTasksOnPage($);
-		}
+			if (tasks.length < amount) {
+				if (savedThemes) {
+					savedThemes[theme] = tasks;
+				} else {
+					savedThemes = { [theme]: tasks };
+				}
 
-		if (tasks.length < amount) {
-			tasksPageCache.set(initialPageUrl, tasks.slice(tasks.length - (timesLoaded + 1) * 5));
+				if (urlSet.length > 1) {
+					const nextUrlTasks = await loadTasksFromPage(
+						{
+							urlSet: urlSet.filter((url) => url !== initialPageUrl),
+							amount: amount - tasks.length,
+							pickUp: true,
+							issue,
+						},
+						browser,
+					);
 
-			if (urlSet.length > 1) {
-				const nextUrlTasks = await loadTasksFromPage(
-					{
-						urlSet: urlSet.filter((url) => url !== initialPageUrl),
-						amount: amount - tasks.length,
-						pickUp: true,
-					},
-					browser,
-				);
+					tasks.push(...nextUrlTasks);
+					savedThemes[theme] = tasks;
 
-				tasks.push(...nextUrlTasks);
+					const savedContent = getSavedContent();
+					setSavedContent({
+						...savedContent,
+						tasks: {
+							...savedContent.tasks,
+							[subjectPrefix]: {
+								...savedContent.tasks[subjectPrefix],
+								[issue]: savedThemes,
+							},
+						},
+					});
+				}
+			} else {
+				if (!savedThemes?.[theme]) {
+					setTimeout(async () => {
+						const fullTasks = await loadTasksFromPage(
+							{
+								urlSet: [initialPageUrl],
+								amount: Infinity,
+								issue,
+							},
+							browser,
+						);
+
+						if (savedThemes) {
+							savedThemes[theme] = fullTasks;
+						} else {
+							savedThemes = { [theme]: fullTasks };
+						}
+
+						const savedContent = getSavedContent();
+						setSavedContent({
+							...savedContent,
+							tasks: {
+								...savedContent.tasks,
+								[subjectPrefix]: {
+									...savedContent.tasks[subjectPrefix],
+									[issue]: savedThemes,
+								},
+							},
+						});
+					});
+				}
 			}
-		} else {
-			setTimeout(async () => {
-				const fullTasks = await loadTasksFromPage(
-					{
-						urlSet: [initialPageUrl],
-						amount: 200,
-					},
-					browser,
-				);
 
-				tasksPageCache.set(initialPageUrl, fullTasks);
-				await page.close();
-			});
+			await page.close();
+			return randomSort(tasks)
+				.filter((task) => !used.includes(task.id))
+				.slice(0, amount);
 		}
-
-		return randomSort(tasks)
-			.filter((task) => !used.includes(task.id))
-			.slice(0, amount);
+		throw new Error('Url set mustn`t be empty');
 	} catch (e) {
 		console.error(e);
 		return [];
@@ -134,6 +192,8 @@ export function getTasksOnPage($) {
 
 	return parsedTaskElements;
 }
+
+const problemCache = new Map();
 export function getTaskInfoFromElement(taskElement) {
 	const id = taskElement.attr('id');
 	if (problemCache.has(id)) return problemCache.get(id);
@@ -192,12 +252,24 @@ export function getTaskInfoFromElement(taskElement) {
 	return problem;
 }
 
+let { topics: topicsCache } = SAVED_CONTENT;
 export async function getTopics(origin) {
+	if (topicsCache?.[origin] != null) return topicsCache?.[origin];
+
 	const res = await fetch(new URL('/newapi/general', origin).href);
 	const json = await res.json();
 	const topics = json.constructor;
 
-	return parseTopics(topics, origin);
+	const parsedTopics = parseTopics(topics, origin);
+
+	if (topicsCache) {
+		topicsCache[origin] = parsedTopics;
+	} else {
+		topicsCache = { [origin]: parsedTopics };
+	}
+	setSavedContent({ ...getSavedContent(), topics: topicsCache });
+
+	return parsedTopics;
 }
 export function parseTopics(topics, origin) {
 	return topics
@@ -218,10 +290,10 @@ export function parseSubtopics(subtopics, origin) {
 	}));
 }
 
-let subjectsCache = null;
+let { subjects: subjectsCache } = SAVED_CONTENT;
 export async function getSubjects(browser) {
 	try {
-		if (subjectsCache !== null) return subjectsCache;
+		if (subjectsCache != null) return subjectsCache;
 		const page = await browser.newPage();
 
 		await page.goto(SITE_ORIGIN, { waitUntil: 'domcontentloaded', timeout: 0 });
@@ -264,6 +336,8 @@ export async function getSubjects(browser) {
 		await page.close();
 
 		subjectsCache = subjects;
+		setSavedContent({ ...getSavedContent(), subjects });
+
 		return subjects;
 	} catch (e) {
 		console.log(e);

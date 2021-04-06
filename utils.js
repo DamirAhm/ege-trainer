@@ -1,12 +1,23 @@
 //@ts-check
 import { IMAGE_ORIGIN, SITE_HOST } from './constants.js';
+import fs from 'fs';
+import fsp from 'fs/promises';
+import path from 'path';
 
-export const prefixRegExp = /(https?:\/\/)?(.*)\.sdamgia.ru/;
+const __dirname = process.cwd();
+
+export const prefixRegExp = /(https?:\/\/)?(.*)\.sdamgia\.ru.*/;
 
 export function getPrefixFromUrl(url) {
 	const [, , prefix] = url.match(prefixRegExp);
 
 	return prefix;
+}
+export const themeRegExp = /theme=(.*)/;
+export function getThemeFromUrl(url) {
+	const [, theme] = url.match(themeRegExp);
+
+	return theme;
 }
 
 export function getUrlSetFromTopic(topic) {
@@ -65,4 +76,23 @@ export function randomSort(array) {
 }
 export function randomElement(array) {
 	return array[Math.floor(Math.random() * array.length)];
+}
+
+let fileCache = null;
+
+export function getSavedContent() {
+	if (fileCache) return fileCache;
+
+	let file = fs.readFileSync(path.join(__dirname, './savedContent.json')).toString();
+
+	const json = JSON.parse(file);
+
+	fileCache = json;
+
+	return json;
+}
+export function setSavedContent(newContent) {
+	const json = JSON.stringify(newContent);
+	fileCache = null;
+	fs.writeFileSync(path.join(__dirname, './savedContent.json'), json);
 }

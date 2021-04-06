@@ -108,7 +108,10 @@ const executablePath =
 						const urlSet =
 							topic.subtopics != null ? getUrlSetFromTopic(topic) : [topic.url];
 
-						const tasks = await loadTasksFromPage({ urlSet, amount, used }, browser);
+						const tasks = await loadTasksFromPage(
+							{ urlSet, amount, used, issue },
+							browser,
+						);
 
 						if (tasks && tasks.length > 0) {
 							result.set(issue, tasks);
