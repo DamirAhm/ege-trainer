@@ -23,10 +23,12 @@ const PROBLEM_SELECTOR = '.problem_container';
 
 const SAVED_CONTENT = getSavedContent();
 
+const GET_ALL = Infinity;
+
 const { tasks: tasksPageCache } = SAVED_CONTENT;
 
-export async function loadTasksFromPage(
-	{ urlSet, amount = 5, used = [], pickUp = false, issue },
+export async function getTasksFromPage(
+	{ urlSet, amount = 5, used = [], useCache = true, issue },
 	browser,
 ) {
 	try {
@@ -42,7 +44,7 @@ export async function loadTasksFromPage(
 			let savedThemes = tasksPageCache[subjectPrefix]?.[issue];
 			const theme = getThemeFromUrl(initialPageUrl);
 
-			if (savedThemes && Object.keys(savedThemes)?.length === urlSet.length && !pickUp) {
+			if (savedThemes && Object.keys(savedThemes)?.length === urlSet.length && useCache) {
 				const savedProblems = Object.values(tasksPageCache[subjectPrefix][issue]);
 				//@ts-ignore
 				const problems = randomSort(savedProblems.flat());
@@ -112,60 +114,22 @@ export async function loadTasksFromPage(
 				}
 
 				if (urlSet.length > 1) {
-					const nextUrlTasks = await loadTasksFromPage(
+					const nextUrlTasks = await getTasksFromPage(
 						{
 							urlSet: urlSet.filter((url) => url !== initialPageUrl),
 							amount: amount - tasks.length,
-							pickUp: true,
+							useCache: false,
 							issue,
 						},
 						browser,
 					);
 
 					tasks.push(...nextUrlTasks);
-					savedThemes[theme] = tasks;
-
-					const savedContent = getSavedContent();
-					setSavedContent({
-						...savedContent,
-						tasks: {
-							...savedContent.tasks,
-							[subjectPrefix]: {
-								...savedContent.tasks[subjectPrefix],
-								[issue]: savedThemes,
-							},
-						},
-					});
 				}
 			} else {
 				if (!savedThemes?.[theme]) {
 					setTimeout(async () => {
-						const fullTasks = await loadTasksFromPage(
-							{
-								urlSet: [initialPageUrl],
-								amount: Infinity,
-								issue,
-							},
-							browser,
-						);
-
-						if (savedThemes) {
-							savedThemes[theme] = fullTasks;
-						} else {
-							savedThemes = { [theme]: fullTasks };
-						}
-
-						const savedContent = getSavedContent();
-						setSavedContent({
-							...savedContent,
-							tasks: {
-								...savedContent.tasks,
-								[subjectPrefix]: {
-									...savedContent.tasks[subjectPrefix],
-									[issue]: savedThemes,
-								},
-							},
-						});
+						await saveAllTasksOfThemeToCache(initialPageUrl, issue, browser);
 					});
 				}
 			}
@@ -181,6 +145,35 @@ export async function loadTasksFromPage(
 		return [];
 	}
 }
+export async function saveAllTasksOfThemeToCache(initialPageUrl, issue, browser) {
+	const subjectPrefix = getPrefixFromUrl(initialPageUrl);
+	const theme = getThemeFromUrl(initialPageUrl);
+
+	const fullTasks = await getTasksFromPage(
+		{
+			urlSet: [initialPageUrl],
+			amount: GET_ALL,
+			issue,
+		},
+		browser
+	);
+
+	const savedContent = getSavedContent();
+	setSavedContent({
+		...savedContent,
+		tasks: {
+			...savedContent.tasks,
+			[subjectPrefix]: {
+				...savedContent.tasks[subjectPrefix],
+				[issue]: {
+					...savedContent.tasks[subjectPrefix]?.[issue],
+					[theme]: fullTasks
+				},
+			},
+		},
+	});
+}
+
 export function getLastProblemId($) {
 	return $(`${PROBLEM_SELECTOR}:last-child`).attr('id');
 }

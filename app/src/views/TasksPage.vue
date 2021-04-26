@@ -62,8 +62,8 @@
 
 				return this.problems
 					.map(({ id }) => id)
-					.concat(usedInSubject)
-					.map((id) => getProblemId(id));
+					.map((id) => getProblemId(id))
+					.concat(usedInSubject);
 			},
 			isAnyProblemVisible() {
 				return this.problems.some(({ visible }) => visible);

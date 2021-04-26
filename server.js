@@ -1,29 +1,16 @@
 //@ts-check
 import path from 'path';
 import fastify from 'fastify';
-import pup from 'puppeteer';
 import cors from 'cors';
 import fastifyExpress from 'fastify-express';
 import sirv from 'sirv';
 import compression from 'compression';
 import fs from 'fs';
-import os from 'os';
 
-import { getSubjects, getTopics, loadTasksFromPage } from './parse.js';
-import { getUrlSetFromTopic, getUrlFromPrefix } from './utils.js';
+import { getUrlFromPrefix, getSavedContent } from './utils.js';
 import { responseTypes } from './constants.js';
 
 const __dirname = process.cwd();
-
-const topicsCache = new Map();
-
-const executablePath =
-	os.platform() === 'linux'
-		? path.resolve(
-				__dirname,
-				'node_modules/puppeteer/.local-chromium/linux-856583/chrome-linux/chrome',
-		  )
-		: path.resolve(__dirname, './node_modules/puppeteer/.local-chromium/chrome-win/chrome.exe');
 
 (async () => {
 	try {
@@ -39,15 +26,11 @@ const executablePath =
 			}),
 		);
 		app.use(compression());
-
-		const browser = await pup.launch({
-			executablePath,
-			args: ['--no-sandbox'],
-		});
-
+		
+		const savedContent = getSavedContent();
 		app.get('/api/subjects', async (req, res) => {
 			res.type(responseTypes.json);
-			return await getSubjects(browser);
+			return savedContent.subjects;
 		});
 		app.get('/api/topics/:subjectPrefix', async (req, res) => {
 			try {
@@ -56,15 +39,7 @@ const executablePath =
 
 				res.type(responseTypes.json);
 
-				let topics;
-				if (topicsCache.has(subjectPrefix)) topics = topicsCache.get(subjectPrefix);
-				else {
-					topics = await getTopics(getUrlFromPrefix(subjectPrefix));
-
-					if (topics) {
-						topicsCache.set(subjectPrefix, topics);
-					}
-				}
+				let topics = savedContent.topics[getUrlFromPrefix(subjectPrefix)];
 
 				if (!topics) {
 					res.code(404);
@@ -86,12 +61,7 @@ const executablePath =
 				const { amount = 5, usedProblemsString = '[]' } = req.query;
 				const used = usedProblemsString.split(',');
 
-				let topics;
-				if (topicsCache.has(subjectPrefix)) topics = topicsCache.get(subjectPrefix);
-				else {
-					topics = await getTopics(getUrlFromPrefix(subjectPrefix));
-					topicsCache.set(subjectPrefix, topics);
-				}
+				let topics = savedContent.topics[getUrlFromPrefix(subjectPrefix)];
 
 				if (topics) {
 					const issues = issue.split('+');
@@ -105,13 +75,15 @@ const executablePath =
 							continue;
 						}
 
-						const urlSet =
-							topic.subtopics != null ? getUrlSetFromTopic(topic) : [topic.url];
-
-						const tasks = await loadTasksFromPage(
-							{ urlSet, amount, used, issue },
-							browser,
-						);
+						//used
+						const allTasks = Object.values(savedContent.tasks[subjectPrefix][issue]).reduce((acc,c) => ([...acc, ...c]), []);
+						const randomSortedTasks = allTasks.sort(() => Math.random() - .5).sort(() => .5 - Math.random());
+						const tasks = [];
+						let index = 0;
+						while (tasks.length < amount && index < randomSortedTasks.length) {
+							if (!used.includes(randomSortedTasks[index].id)) tasks.push(randomSortedTasks[index]);
+							index++;
+						}
 
 						if (tasks && tasks.length > 0) {
 							result.set(issue, tasks);

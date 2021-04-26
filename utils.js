@@ -50,7 +50,7 @@ export function fixHTML(html) {
 		.replace(styleRegExp, '');
 }
 
-const answerRegExp = /Ответ: ([0-9а-я()|]+)/;
+const answerRegExp = /Ответ: ([0-9а-яa-z()|]+)/i;
 export function isCheckableAnswer(answer) {
 	if (answer.match(answerRegExp)) {
 		const [_, value] = answer.match(answerRegExp);
@@ -80,6 +80,9 @@ export function randomElement(array) {
 
 let fileCache = null;
 
+/**
+ * @returns {import("./types").savedContent}
+ */
 export function getSavedContent() {
 	if (fileCache) return fileCache;
 
@@ -92,7 +95,7 @@ export function getSavedContent() {
 	return json;
 }
 export function setSavedContent(newContent) {
-	const json = JSON.stringify(newContent);
+	const json = JSON.stringify(newContent, null, 2);
 	fileCache = null;
 	fs.writeFileSync(path.join(__dirname, './savedContent.json'), json);
 }

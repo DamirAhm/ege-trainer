@@ -25,7 +25,9 @@
 
 			<div class="problem-footer">
 				<div class="problem-answer">
-					<div v-if="answerType === 'text'">Ответ: {{ this.answer.join(' | ') }}</div>
+					<div v-if="answerType === 'text' && typeof answer === 'object'">
+						Ответ: {{ this.answer.join(' | ') }}
+					</div>
 					<div v-else v-html="answer"></div>
 				</div>
 
