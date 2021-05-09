@@ -106,10 +106,8 @@ export default {
 				})
 					.then((issues) => {
 						for (const issue in issues) {
-							console.log(issue, issues[issue]);
-
 							this.problems = this.problems.concat(
-								issues[issue].map((task) => ({ ...task, visible: true }))
+								issues[issue].map((task) => ({ ...task, visible: true, issue }))
 							);
 						}
 						this.problems = this.problems.sort(
@@ -178,11 +176,14 @@ export default {
 		async appendProblemsForFail(id) {
 			if (this.problemsPromises[id]) {
 				const newProblems = await this.problemsPromises[id];
-				const newProblemsWithVisibleProp = newProblems.map((prob) => ({
-					...prob,
-					visible: true,
-				}));
-				//TODO Без фильтра добавляется по 2 экземпляра каждой задачи ????
+				const newProblemsWithVisibleProp = Object.entries(newProblems).reduce(
+					(acc, [issue, problems]) => [
+						...acc,
+						...problems.map((p) => ({ ...p, visible: true, issue })),
+					],
+					[]
+				);
+
 				this.problems = [...this.problems, ...newProblemsWithVisibleProp];
 			}
 		},
@@ -199,11 +200,11 @@ export default {
 				this.problemsPromises[id] = promise;
 			}
 		},
-		async getMoreProblems(amount, issue) {
+		async getMoreProblems(amount, issues) {
 			try {
 				const { subjectPrefix } = this.$route.params;
 
-				return await getTasks(subjectPrefix, issue, {
+				return await getTasks(subjectPrefix, issues, {
 					amount,
 					used: this.used,
 				});

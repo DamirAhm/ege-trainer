@@ -97,6 +97,7 @@ const __dirname = process.cwd();
 					}
 
 					if (result.size === 0) {
+						console.log("can't find any tasks");
 						res.code(404);
 						return "Can't find any tasks";
 					}
@@ -107,13 +108,14 @@ const __dirname = process.cwd();
 					return JSON.stringify(Object.fromEntries(result));
 				} else {
 					res.code(404);
-					throw new Error();
+					console.log("Can't find topics");
+					return "Can't find topics";
 				}
 			} catch (e) {
 				console.error(e);
 
 				res.code(404);
-				throw new Error();
+				throw e;
 			}
 		});
 
