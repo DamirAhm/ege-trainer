@@ -80,12 +80,13 @@ export default {
 		}),
 	},
 	created() {
-		window.a = this;
 		const { subjectPrefix, issues } = this.$route.params;
 		const {
 			problems: savedProblems,
-			issue: savedIssues,
+			issues: savedIssues,
 		} = getProblemsInfoFromStorage();
+
+		console.log({ savedProblems, savedIssues, issues });
 
 		if (savedProblems && savedIssues === issues) {
 			this.problems = savedProblems;
