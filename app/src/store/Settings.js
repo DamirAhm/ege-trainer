@@ -8,6 +8,8 @@ export default {
 
 		initialAmountOfProblems: 2,
 		newProblemsForFail: 2,
+
+		isAutoscrollOn: true
 	},
 	mutations: {
 		[mutations.SET_SETTINGS](state, newSettings) {

@@ -76,6 +76,7 @@ export default {
 			newProblemsForFail: (state) => state.settings.newProblemsForFail,
 			initialAmountOfProblems: (state) =>
 				state.settings.initialAmountOfProblems,
+			isAutoscrollOn: (state) => state.settings.isAutoscrollOn,
 		}),
 	},
 	created() {
@@ -165,7 +166,7 @@ export default {
 				(el) => el.dataset.id === firstVisible.id
 			);
 
-			if (element) {
+			if (element && this.isAutoscrollOn) {
 				element.querySelector("input")?.focus?.();
 				element.scrollIntoView();
 			}
